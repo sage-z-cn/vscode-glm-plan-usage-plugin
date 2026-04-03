@@ -50,8 +50,6 @@ Token usage(Weekly)
   Next reset: 2026-04-07 00:00:00
 ```
 
-按 `F5` 启动扩展开发主机进行调试。
-
 ### 配置
 
 在设置中配置（`Ctrl+,`）：
@@ -134,8 +132,6 @@ Token usage(Weekly)
   [███░░░░░░░░░░░░░░░░░░░░░░░░░░░] 10.0%
   Next reset: 2026-04-07 00:00:00
 ```
-
-Press `F5` to launch the extension development host for debugging.
 
 ### Configuration
 
