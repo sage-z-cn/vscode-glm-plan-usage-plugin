@@ -1,10 +1,10 @@
 # GLM Plan Usage
 
-[English](#english)
+[English Doc](#english)
 
 ---
 
-状态栏中实时监控 GLM Coding Plan 的配额使用情况。
+状态栏中实时监控 GLM Coding Plan 的配额使用情况。支持 **bigmodel.cn** 和 **Z.ai** 平台。
 
 ### 功能特性
 
@@ -21,6 +21,8 @@
 ### 截图
 
 #### 状态栏
+
+![状态栏](assets/status-bar.png)
 
 状态栏右侧显示两个指标：
 
@@ -87,7 +89,7 @@ Token usage(Weekly)
 <a name="english"></a>
 ## English
 
-Real-time monitoring of GLM Coding Plan quota usage in the status bar.
+Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports **bigmodel.cn** and **Z.ai** platforms.
 
 ### Features
 
@@ -104,6 +106,8 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar.
 ### Screenshots
 
 #### Status Bar
+
+![Status Bar](assets/status-bar.png)
 
 Two indicators displayed on the right side of the status bar:
 
