@@ -1,0 +1,21 @@
+{
+  "API Key is not configured. Please set glmPlanUsage.authToken in settings or GLM_API_KEY environment variable.": "API Key 未配置。请在设置中配置 glmPlanUsage.authToken 或设置 GLM_API_KEY 环境变量。",
+  "Base URL is not configured. Please set glmPlanUsage.baseUrl in settings or GLM_BASE_URL environment variable.": "API 地址未配置。请在设置中配置 glmPlanUsage.baseUrl 或设置 GLM_BASE_URL 环境变量。",
+  "Unsupported base URL. Supported: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn": "不支持的基础 URL。支持: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn",
+  "Failed to query usage: {0}": "查询使用情况失败: {0}",
+  "⚠ GLM Plan quota warning: {0} has reached {1}%": "⚠ GLM Plan 配额警告: {0} 已达 {1}%",
+  "Querying...": "查询中...",
+  "Next reset": "下次刷新",
+  "N/A": "未知",
+  "No 5h data": "暂无5小时数据",
+  "No weekly data": "暂无周数据",
+  "Error: {0}": "错误: {0}",
+  "Config invalid": "配置无效",
+  "Configuration is invalid": "配置无效",
+  "=== GLM Coding Plan Quota Limits ===": "=== GLM Coding Plan 配额限制 ===",
+  "Platform": "平台",
+  "No data available": "暂无数据",
+  "Current": "当前使用",
+  "Total": "总量",
+  "Unknown error": "未知错误"
+}

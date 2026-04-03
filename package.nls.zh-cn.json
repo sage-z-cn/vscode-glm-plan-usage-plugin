@@ -1,0 +1,13 @@
+{
+  "displayName": "GLM Plan Usage",
+  "description": "查询 GLM Coding Plan 服务的配额和使用统计",
+  "command.query.title": "GLM Plan Usage: 查询使用统计",
+  "configuration.title": "GLM Plan Usage",
+  "configuration.authToken.description": "认证令牌 (GLM_API_KEY)",
+  "configuration.baseUrl.description": "API 端点地址 (GLM_BASE_URL)",
+  "configuration.baseUrl.enum.zhipu": "ZHIPU 平台 (open.bigmodel.cn)",
+  "configuration.baseUrl.enum.dev": "ZHIPU 开发平台 (dev.bigmodel.cn)",
+  "configuration.baseUrl.enum.zai": "Z.ai 平台 (api.z.ai)",
+  "configuration.autoRefresh.description": "启动时自动刷新使用统计",
+  "configuration.refreshInterval.description": "自动刷新间隔（秒），设为 0 禁用"
+}

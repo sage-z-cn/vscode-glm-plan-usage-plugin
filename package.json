@@ -1,0 +1,75 @@
+{
+  "name": "glm-plan-usage",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.0.0",
+  "publisher": "sagez",
+  "engines": {
+    "vscode": "^1.107.1"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "l10n": "./l10n",
+  "contributes": {
+    "commands": [
+      {
+        "command": "glmPlanUsage.query",
+        "title": "%command.query.title%"
+      }
+    ],
+    "configuration": {
+      "title": "%configuration.title%",
+      "properties": {
+        "glmPlanUsage.authToken": {
+          "type": "string",
+          "default": "",
+          "description": "%configuration.authToken.description%"
+        },
+        "glmPlanUsage.baseUrl": {
+          "type": "string",
+          "default": "https://open.bigmodel.cn/api/anthropic",
+          "enum": [
+            "https://open.bigmodel.cn/api/anthropic",
+            "https://dev.bigmodel.cn/api/anthropic",
+            "https://api.z.ai/api/anthropic"
+          ],
+          "enumDescriptions": [
+            "%configuration.baseUrl.enum.zhipu%",
+            "%configuration.baseUrl.enum.dev%",
+            "%configuration.baseUrl.enum.zai%"
+          ],
+          "description": "%configuration.baseUrl.description%"
+        },
+        "glmPlanUsage.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "%configuration.autoRefresh.description%"
+        },
+        "glmPlanUsage.refreshInterval": {
+          "type": "number",
+          "default": 300,
+          "description": "%configuration.refreshInterval.description%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}
