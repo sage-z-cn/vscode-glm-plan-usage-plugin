@@ -4,6 +4,24 @@
   "description": "%description%",
   "version": "1.0.0",
   "publisher": "sagez",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "keywords": [
+    "glm",
+    "coding",
+    "plan",
+    "usage",
+    "bigmodel",
+    "zhipu"
+  ],
+  "homepage": "https://github.com/sage-z-cn/vscode-glm-plan-usage-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/sage-z-cn/vscode-glm-plan-usage-plugin/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sage-z-cn/vscode-glm-plan-usage-plugin.git"
+  },
   "engines": {
     "vscode": "^1.107.1"
   },
