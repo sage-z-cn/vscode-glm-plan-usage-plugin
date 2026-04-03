@@ -107,7 +107,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 #### Status Bar
 
-![Status Bar](assets/status-bar.png)
+![Status Bar](assets/status-bar-en.png)
 
 Two indicators displayed on the right side of the status bar:
 
