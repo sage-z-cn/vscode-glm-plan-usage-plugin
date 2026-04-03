@@ -1,3 +1,7 @@
+// 配额类型常量
+export const QUOTA_TYPE_5H = 'Token usage(5 Hour)';
+export const QUOTA_TYPE_WEEKLY = 'Token usage(Weekly)';
+
 export type Platform = 'ZAI' | 'ZHIPU';
 
 export interface UsageQueryConfig {

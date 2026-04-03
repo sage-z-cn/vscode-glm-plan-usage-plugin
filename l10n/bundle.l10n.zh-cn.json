@@ -4,6 +4,8 @@
   "Unsupported base URL. Supported: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn": "不支持的基础 URL。支持: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn",
   "Failed to query usage: {0}": "查询使用情况失败: {0}",
   "⚠ GLM Plan quota warning: {0} has reached {1}%": "⚠ GLM Plan 配额警告: {0} 已达 {1}%",
+  "⚠ GLM Plan 5-hour quota warning: {0}% used": "⚠ GLM Plan 5小时配额警告: 已使用 {0}%",
+  "⚠ GLM Plan weekly quota warning: {0}% used": "⚠ GLM Plan 周配额警告: 已使用 {0}%",
   "Querying...": "查询中...",
   "Next reset": "下次刷新",
   "N/A": "未知",
@@ -17,5 +19,6 @@
   "No data available": "暂无数据",
   "Current": "当前使用",
   "Total": "总量",
-  "Unknown error": "未知错误"
+  "Unknown error": "未知错误",
+  "Request timeout after 30 seconds": "请求超时（30秒）"
 }

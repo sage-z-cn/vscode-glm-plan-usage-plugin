@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse } from './types';
+import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
 function getColor(percentage: number): string {
     if (percentage >= 90) {
@@ -65,10 +65,10 @@ export class StatusBarManager implements vscode.Disposable {
 
     updateUsage(response: UsageResponse): void {
         const fiveHourLimit = response.quotaLimits.find(
-            (limit) => limit.type === 'Token usage(5 Hour)'
+            (limit) => limit.type === QUOTA_TYPE_5H
         );
         const weeklyLimit = response.quotaLimits.find(
-            (limit) => limit.type === 'Token usage(Weekly)'
+            (limit) => limit.type === QUOTA_TYPE_WEEKLY
         );
 
         if (fiveHourLimit) {

@@ -36,7 +36,7 @@ export class ConfigManager {
     }
 
     static hasValidConfig(): boolean {
-        return this.getAuthToken().length > 0 && this.getBaseUrl().length > 0;
+        return this.validateConfig().valid;
     }
 
     static validateConfig(): { valid: boolean; error?: string } {

@@ -12,6 +12,18 @@
         "${workspaceFolder}/out/**/*.js"
       ],
       "preLaunchTask": "npm: compile"
+    },
+    {
+      "name": "Package Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "preLaunchTask": "vsce: package",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/**/*.js"
+      ]
     }
   ]
 }

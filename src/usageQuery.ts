@@ -1,6 +1,7 @@
+import * as vscode from 'vscode';
 import * as https from 'https';
 import { URL } from 'url';
-import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData } from './types';
+import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 import { ConfigManager } from './config';
 
 export class UsageQueryService {
@@ -64,7 +65,7 @@ export class UsageQueryService {
                 tokensLimitCount++;
                 return {
                     ...base,
-                    type: isFirst ? 'Token usage(5 Hour)' : 'Token usage(Weekly)',
+                    type: isFirst ? QUOTA_TYPE_5H : QUOTA_TYPE_WEEKLY,
                     percentage: item.percentage
                 };
             }
@@ -134,6 +135,12 @@ export class UsageQueryService {
 
             req.on('error', (error) => {
                 reject(error);
+            });
+
+            // 设置30秒超时
+            req.setTimeout(30000, () => {
+                req.destroy();
+                reject(new Error(vscode.l10n.t('Request timeout after 30 seconds')));
             });
 
             req.end();

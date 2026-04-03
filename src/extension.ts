@@ -3,19 +3,38 @@ import { UsageQueryService } from './usageQuery';
 import { StatusBarManager } from './statusBar';
 import { ConfigManager } from './config';
 
-import { UsageResponse } from './types';
+import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
 let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
 const warnedResetTimes = new Set<number>();
 
 function checkQuotaWarning(response: UsageResponse): void {
+    const now = Date.now();
+    // 清理已过期的重置时间，防止内存泄漏
+    for (const resetTime of warnedResetTimes) {
+        if (resetTime < now) {
+            warnedResetTimes.delete(resetTime);
+        }
+    }
+
     for (const item of response.quotaLimits) {
         if (item.percentage >= 90 && item.nextResetTime && !warnedResetTimes.has(item.nextResetTime)) {
             warnedResetTimes.add(item.nextResetTime);
-            vscode.window.showWarningMessage(
-                vscode.l10n.t('⚠ GLM Plan quota warning: {0} has reached {1}%', item.type, item.percentage.toFixed(1))
-            );
+            // 根据配额类型显示不同的警告消息
+            if (item.type === QUOTA_TYPE_5H) {
+                vscode.window.showWarningMessage(
+                    vscode.l10n.t('⚠ GLM Plan 5-hour quota warning: {0}% used', item.percentage.toFixed(1))
+                );
+            } else if (item.type === QUOTA_TYPE_WEEKLY) {
+                vscode.window.showWarningMessage(
+                    vscode.l10n.t('⚠ GLM Plan weekly quota warning: {0}% used', item.percentage.toFixed(1))
+                );
+            } else {
+                vscode.window.showWarningMessage(
+                    vscode.l10n.t('⚠ GLM Plan quota warning: {0} has reached {1}%', item.type, item.percentage.toFixed(1))
+                );
+            }
         }
     }
 }
