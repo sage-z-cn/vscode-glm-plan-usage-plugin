@@ -38,6 +38,17 @@ export interface UsageResponse {
     modelUsage: ModelUsageData[];
     toolUsage: ToolUsageData[];
     quotaLimits: QuotaLimitData[];
+    trend?: TrendData;
+}
+
+export interface TrendData {
+    xTime: string[];
+    yValue: (number | null)[];
+    modelCallCount: (number | null)[];
+    totalUsage: {
+        totalModelCallCount: number;
+        totalTokensUsage: number;
+    };
 }
 
 export interface QueryError {

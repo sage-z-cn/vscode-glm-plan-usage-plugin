@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import { URL } from 'url';
-import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 import { ConfigManager } from './config';
 
 export class UsageQueryService {
@@ -29,8 +29,8 @@ export class UsageQueryService {
         const startDate = new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate() - 1,
-            now.getHours(),
+            now.getDate(),
+            0,
             0,
             0,
             0
@@ -39,7 +39,7 @@ export class UsageQueryService {
             now.getFullYear(),
             now.getMonth(),
             now.getDate(),
-            now.getHours(),
+            23,
             59,
             59,
             999
@@ -157,6 +157,18 @@ export class UsageQueryService {
         return [];
     }
 
+    private static processTrendData(data: any): TrendData | undefined {
+        if (!data || !data.x_time || !data.tokensUsage) {
+            return undefined;
+        }
+        return {
+            xTime: data.x_time,
+            yValue: data.tokensUsage,
+            modelCallCount: data.modelCallCount || [],
+            totalUsage: data.totalUsage || { totalModelCallCount: 0, totalTokensUsage: 0 }
+        };
+    }
+
     static async queryUsage(): Promise<UsageResponse> {
         const authToken = ConfigManager.getAuthToken();
         const baseUrl = ConfigManager.getBaseUrl();
@@ -183,14 +195,16 @@ export class UsageQueryService {
             this.httpsGet<any>(quotaLimitUrl, authToken, undefined, (data) => this.processQuotaLimit(data))
         ]);
 
-        const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw);
+        const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw?.modelUsage || modelUsageRaw);
         const toolUsage = this.ensureArray<ToolUsageData>(toolUsageRaw);
+        const trend = this.processTrendData(modelUsageRaw);
 
         return {
             platform,
             modelUsage,
             toolUsage,
-            quotaLimits
+            quotaLimits,
+            trend
         };
     }
 }

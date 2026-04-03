@@ -1,6 +1,6 @@
 # GLM Plan Usage
 
-[English Doc](#english)
+[English Intro](#english)
 
 ---
 
@@ -12,8 +12,10 @@
   - 🟢 绿色：< 70%
   - 🟡 黄色：70% ~ 89%
   - 🔴 红色：≥ 90%
+- **富文本提示**：鼠标悬停显示详细配额信息和今日使用趋势图
+- **今日统计**：显示今日 Token 用量、调用次数、峰值数据
+- **趋势图表**：Unicode 柱状图展示今日每小时使用趋势
 - **配额预警**：使用率达到 90% 时自动弹出警告通知
-- **详细报告**：在输出面板查看带 ASCII 进度条的配额详情
 - **自动刷新**：可配置定时自动刷新配额数据
 - **多平台支持**：支持 智谱(cn) 和 Z.ai 平台
 - **国际化**：支持中文和英文界面
@@ -24,31 +26,18 @@
 
 ![状态栏](assets/status-bar.png)
 
-状态栏右侧显示两个指标：
+状态栏右侧显示合并指标：`5h: XX.X% | Week: XX.X%`
 
-| 指标 | 说明 |
-|------|------|
-| `5h: XX.X%` | 5 小时 Token 配额 |
-| `Week: XX.X%` | 周 Token 配额 |
+#### 悬停显示
 
-鼠标悬停可查看下次刷新时间。点击可手动刷新。
+![悬停显示](assets/tooltip-cn.png)
 
-#### 输出面板
-
-查询后在输出面板显示详细的配额报告：
-
-```
-=== GLM Coding Plan Quota Limits ===
-Platform: ZHIPU
-
-Token usage(5 Hour)
-  [██████████░░░░░░░░░░░░░░░░░░░░] 33.3%
-  Next reset: 2026-04-03 15:30:00
-
-Token usage(Weekly)
-  [███░░░░░░░░░░░░░░░░░░░░░░░░░░░] 10.0%
-  Next reset: 2026-04-07 00:00:00
-```
+悬停提示包含：
+- 更新时间
+- 5 小时配额进度条及下次刷新时间
+- 周配额进度条及下次刷新时间
+- 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
+- 今日趋势：Unicode 柱状图展示每小时使用情况
 
 ### 配置
 
@@ -85,7 +74,7 @@ Token usage(Weekly)
 ---
 
 <a name="english"></a>
-## English
+## Introduction
 
 Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports **bigmodel.cn** and **Z.ai** platforms.
 
@@ -95,8 +84,10 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
   - 🟢 Green: < 70%
   - 🟡 Yellow: 70% ~ 89%
   - 🔴 Red: ≥ 90%
+- **Rich Tooltip**: Hover to view detailed quota information and today's usage trend chart
+- **Today Statistics**: Display today's token usage, call count, and peak data
+- **Trend Chart**: Unicode bar chart showing hourly usage trend for today
 - **Quota Warning**: Automatic warning notification when usage reaches 90%
-- **Detailed Report**: View quota details with ASCII progress bars in the output panel
 - **Auto Refresh**: Configurable automatic quota data refresh
 - **Multi-Platform Support**: Supports ZHIPU (cn) and Z.ai platforms
 - **Internationalization**: Supports Chinese and English interface
@@ -105,40 +96,27 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 #### Status Bar
 
-![Status Bar](assets/status-bar-en.png)
+![Status Bar](assets/status-bar.png)
 
-Two indicators displayed on the right side of the status bar:
+Combined indicator displayed on the right side of the status bar: `5h: XX.X% | Week: XX.X%`
 
-| Indicator | Description |
-|------|------|
-| `5h: XX.X%` | 5-hour Token quota |
-| `Week: XX.X%` | Weekly Token quota |
+#### Tooltip
 
-Hover to see the next refresh time. Click to manually refresh.
+![Tooltip](assets/tooltip-en.png)
 
-#### Output Panel
-
-After querying, detailed quota report is displayed in the output panel:
-
-```
-=== GLM Coding Plan Quota Limits ===
-Platform: ZHIPU
-
-Token usage(5 Hour)
-  [██████████░░░░░░░░░░░░░░░░░░░░] 33.3%
-  Next reset: 2026-04-03 15:30:00
-
-Token usage(Weekly)
-  [███░░░░░░░░░░░░░░░░░░░░░░░░░░░] 10.0%
-  Next reset: 2026-04-07 00:00:00
-```
+The tooltip includes:
+- Updated time
+- 5-hour quota progress bar with next reset time
+- Weekly quota progress bar with next reset time
+- Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
+- Today Trend: Unicode bar chart showing hourly usage
 
 ### Configuration
 
 Configure in settings (`Ctrl+,`):
 
 | Setting | Description | Default |
-|--------|------|------|
+|--------|------|--------|
 | `glmPlanUsage.authToken` | API Key, can also be configured via environment variable `GLM_API_KEY` | - |
 | `glmPlanUsage.baseUrl` | API URL, select from dropdown | `https://open.bigmodel.cn/api/anthropic` |
 | `glmPlanUsage.autoRefresh` | Auto refresh on startup | `true` |

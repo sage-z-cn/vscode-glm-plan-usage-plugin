@@ -47,6 +47,10 @@ export async function activate(context: vscode.ExtensionContext) {
     const queryCommand = vscode.commands.registerCommand(
         'glmPlanUsage.query',
         async () => {
+            if (!ConfigManager.hasValidConfig()) {
+                vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
+                return;
+            }
             await queryUsage();
         }
     );
@@ -55,12 +59,14 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(statusBarManager);
 
     if (ConfigManager.hasValidConfig()) {
-        statusBarManager.show();
-
         if (ConfigManager.getAutoRefresh()) {
             await queryUsage();
             setupAutoRefresh();
+        } else {
+            statusBarManager.show();
         }
+    } else {
+        statusBarManager.setNotConfigured();
     }
 
     context.subscriptions.push(
@@ -87,7 +93,6 @@ async function queryUsage(): Promise<void> {
     try {
         const response = await UsageQueryService.queryUsage();
         statusBarManager.updateUsage(response);
-        statusBarManager.displayResults(response);
 
         checkQuotaWarning(response);
     } catch (error) {
@@ -114,10 +119,14 @@ function setupAutoRefresh(): void {
 
 function handleConfigChange(): void {
     if (ConfigManager.hasValidConfig()) {
-        statusBarManager.show();
-        setupAutoRefresh();
+        if (ConfigManager.getAutoRefresh()) {
+            queryUsage();
+            setupAutoRefresh();
+        } else {
+            statusBarManager.show();
+        }
     } else {
-        statusBarManager.hide();
+        statusBarManager.setNotConfigured();
         if (autoRefreshTimer) {
             clearInterval(autoRefreshTimer);
         }
