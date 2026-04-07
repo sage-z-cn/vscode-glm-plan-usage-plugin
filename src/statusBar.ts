@@ -221,7 +221,20 @@ export class StatusBarManager implements vscode.Disposable {
         const recentValues = trend.yValue.slice(-24);
         const recentTimes = trend.xTime.slice(-Math.min(24, trend.xTime.length));
 
-        const validValues = recentValues.filter((v): v is number => v !== null && v > 0);
+        // 找到第一个有数据的索引
+        let firstValidIndex = 0;
+        for (let i = 0; i < recentValues.length; i++) {
+            if (recentValues[i] !== null && recentValues[i] !== 0) {
+                firstValidIndex = i;
+                break;
+            }
+        }
+
+        // 从第一个有数据的位置开始截取
+        const displayValues = recentValues.slice(firstValidIndex);
+        const displayTimes = recentTimes.slice(firstValidIndex);
+
+        const validValues = displayValues.filter((v): v is number => v !== null && v > 0);
         if (validValues.length === 0) {
             return '';
         }
@@ -233,8 +246,8 @@ export class StatusBarManager implements vscode.Disposable {
 
         let bars = '';
 
-        for (let i = 0; i < recentValues.length; i++) {
-            const val = recentValues[i];
+        for (let i = 0; i < displayValues.length; i++) {
+            const val = displayValues[i];
             if (val === null || val === 0) {
                 bars += ' ';
             } else {
@@ -243,11 +256,11 @@ export class StatusBarManager implements vscode.Disposable {
             }
         }
 
-        if (recentValues.length < 6) {
+        if (displayValues.length < 6) {
             return bars;
         }
 
-        const labels = this.getTimeLabels(recentTimes, recentValues.length);
+        const labels = this.getTimeLabels(displayTimes, displayValues.length);
 
         return `${bars}\n${labels}`;
     }
@@ -264,8 +277,8 @@ export class StatusBarManager implements vscode.Disposable {
         const formatTime = (t: string): string => {
             const parts = t.split(' ');
             if (parts.length >= 2) {
-                const time = parts[1].split(':')[0];
-                return time + 'h';
+                const hour = parseInt(parts[1].split(':')[0], 10);
+                return hour + 'h';
             }
             return t;
         };

@@ -98,7 +98,6 @@ async function queryUsage(): Promise<void> {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : vscode.l10n.t('Unknown error');
         statusBarManager.setError(errorMessage);
-        vscode.window.showErrorMessage(vscode.l10n.t('Failed to query usage: {0}', errorMessage));
     }
 }
 
