@@ -19,6 +19,7 @@
 - **自动刷新**：可配置定时自动刷新配额数据
 - **多平台支持**：支持 智谱(cn) 和 Z.ai 平台
 - **国际化**：支持中文和英文界面
+- **安全存储**：API Key 使用操作系统级加密存储，不会明文写入配置文件
 
 ### 截图
 
@@ -34,8 +35,8 @@
 
 悬停提示包含：
 - 更新时间
-- 5 小时配额进度条及下次刷新时间
-- 周配额进度条及下次刷新时间
+- 5 小时配额进度条及下次刷新时间（倒计时格式）
+- 周配额进度条及下次刷新时间（倒计时格式）
 - 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
 - 今日趋势：Unicode 柱状图展示每小时使用情况
 
@@ -45,10 +46,36 @@
 
 | 设置项 | 说明 | 默认值 |
 |--------|------|--------|
-| `glmPlanUsage.authToken` | API Key，也可通过环境变量 `GLM_API_KEY` 配置 | - |
 | `glmPlanUsage.baseUrl` | API 地址，下拉选择 | `https://open.bigmodel.cn/api/anthropic` |
 | `glmPlanUsage.autoRefresh` | 启动时自动刷新 | `true` |
 | `glmPlanUsage.refreshInterval` | 自动刷新间隔（秒），`0` 为禁用 | `300` |
+
+#### 安全存储说明
+
+**API Key 已迁移至安全存储**
+
+- API Key 不再存储在 `settings.json` 文件中，而是使用 VS Code 的 **SecretStorage** API
+- SecretStorage 利用操作系统密钥管理器进行加密存储（Windows Credential Manager / macOS Keychain / Linux libsecret）
+- 你的 API Key 不会被同步到其他设备或 Git 仓库中
+
+**设置 API Key**
+
+推荐使用命令方式设置（加密存储，绝不写入文件）：
+
+1. 打开命令面板（`Ctrl+Shift+P`）
+2. 输入 `GLM Plan Usage: 设置 API Key`
+3. 在弹出的输入框中粘贴你的 API Key（输入框已启用密码模式，安全输入）
+4. 按 Enter 确认保存
+
+> **⚡ 安全性说明**：此命令使用 VS Code SecretStorage API，API Key 将通过操作系统密钥管理器加密存储，绝不会写入任何配置文件或 Git 仓库。
+
+**环境变量方式**
+
+你也可以通过环境变量 `GLM_API_KEY` 配置，这种方式在多个 VS Code 实例间共享，无需重复设置。
+
+**自动迁移**
+
+如果你之前在 `settings.json` 中配置过 API Key，升级到新版本后首次启动时，扩展会自动将 token 迁移到安全存储，并清空配置文件中的明文。
 
 #### 支持的 API 地址
 
@@ -65,9 +92,9 @@
 
 ### 使用方法
 
-1. 配置 API Key 和 Base URL
-2. 打开命令面板（`Ctrl+Shift+P`），输入 `GLM Plan Usage: Query Usage Statistics`
-3. 或直接点击状态栏中的配额指标
+1. 配置 Base URL（可选，默认已设置）
+2. 安全设置 API Key：命令面板（`Ctrl+Shift+P`）→ `GLM Plan Usage: 设置 API Key`（加密存储）
+3. 或直接点击状态栏中的配额指标进行手动刷新
 
 扩展会在启动时自动查询并定时刷新。
 
@@ -91,6 +118,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Auto Refresh**: Configurable automatic quota data refresh
 - **Multi-Platform Support**: Supports ZHIPU (cn) and Z.ai platforms
 - **Internationalization**: Supports Chinese and English interface
+- **Secure Storage**: API Key is stored using OS-level encryption, never written in plain text
 
 ### Screenshots
 
@@ -106,8 +134,8 @@ Combined indicator displayed on the right side of the status bar: `5h: XX.X% | W
 
 The tooltip includes:
 - Updated time
-- 5-hour quota progress bar with next reset time
-- Weekly quota progress bar with next reset time
+- 5-hour quota progress bar with next reset time (countdown format)
+- Weekly quota progress bar with next reset time (countdown format)
 - Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
 - Today Trend: Unicode bar chart showing hourly usage
 
@@ -117,10 +145,36 @@ Configure in settings (`Ctrl+,`):
 
 | Setting | Description | Default |
 |--------|------|--------|
-| `glmPlanUsage.authToken` | API Key, can also be configured via environment variable `GLM_API_KEY` | - |
 | `glmPlanUsage.baseUrl` | API URL, select from dropdown | `https://open.bigmodel.cn/api/anthropic` |
 | `glmPlanUsage.autoRefresh` | Auto refresh on startup | `true` |
 | `glmPlanUsage.refreshInterval` | Auto refresh interval (seconds), `0` to disable | `300` |
+
+#### Secure Storage
+
+**API Key Migrated to Secure Storage**
+
+- API Key is no longer stored in `settings.json`. It now uses VS Code's **SecretStorage** API
+- SecretStorage leverages your OS keychain for encrypted storage (Windows Credential Manager / macOS Keychain / Linux libsecret)
+- Your API Key won't sync to other devices or be committed to Git
+
+**Set API Key**
+
+Use the command to set your API Key (encrypted storage, never written to files):
+
+1. Open command palette (`Ctrl+Shift+P`)
+2. Type `GLM Plan Usage: Set API Key`
+3. Paste your API Key in the input dialog (password mode enabled for secure input)
+4. Press Enter to save
+
+> **⚡ Security Note**: This command uses VS Code SecretStorage API. Your API Key will be encrypted by the OS keychain manager and never written to any config file or Git repository.
+
+**Environment Variable**
+
+You can also configure via the `GLM_API_KEY` environment variable. This shares the key across multiple VS Code instances.
+
+**Automatic Migration**
+
+If you previously configured the API Key in `settings.json`, the extension will automatically migrate it to secure storage on first startup after updating, clearing the plaintext from your config file.
 
 #### Supported API URLs
 
@@ -137,8 +191,8 @@ Configure in settings (`Ctrl+,`):
 
 ### Usage
 
-1. Configure API Key and Base URL
-2. Open command palette (`Ctrl+Shift+P`), type `GLM Plan Usage: Query Usage Statistics`
-3. Or click the quota indicator in the status bar directly
+1. Configure Base URL (optional, default is pre-configured)
+2. Securely set API Key: Command palette (`Ctrl+Shift+P`) → `GLM Plan Usage: Set API Key` (encrypted storage)
+3. Or click the quota indicator in the status bar directly for manual refresh
 
 The extension will automatically query on startup and refresh periodically.

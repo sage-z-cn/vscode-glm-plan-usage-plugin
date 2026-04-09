@@ -2,11 +2,21 @@ import * as vscode from 'vscode';
 
 export class ConfigManager {
     private static readonly CONFIG_SECTION = 'glmPlanUsage';
+    private static readonly SECRET_KEY = 'glmPlanUsage.authToken';
+    private static secrets: vscode.SecretStorage | undefined;
 
-    static getAuthToken(): string {
-        const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
-        const token = config.get<string>('authToken') || '';
-        return token || process.env.GLM_API_KEY || '';
+    static initialize(secrets: vscode.SecretStorage): void {
+        this.secrets = secrets;
+    }
+
+    static async getAuthToken(): Promise<string> {
+        // 优先从 SecretStorage 读取
+        if (this.secrets) {
+            const stored = await this.secrets.get(this.SECRET_KEY);
+            if (stored) { return stored; }
+        }
+        // fallback 到环境变量
+        return process.env.GLM_API_KEY || '';
     }
 
     static getBaseUrl(): string {
@@ -28,8 +38,13 @@ export class ConfigManager {
     }
 
     static async setAuthToken(token: string): Promise<void> {
-        const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
-        await config.update('authToken', token, vscode.ConfigurationTarget.Global);
+        if (this.secrets) {
+            if (token) {
+                await this.secrets.store(this.SECRET_KEY, token);
+            } else {
+                await this.secrets.delete(this.SECRET_KEY);
+            }
+        }
     }
 
     static async setBaseUrl(url: string): Promise<void> {
@@ -37,18 +52,18 @@ export class ConfigManager {
         await config.update('baseUrl', url, vscode.ConfigurationTarget.Global);
     }
 
-    static hasValidConfig(): boolean {
-        return this.validateConfig().valid;
+    static async hasValidConfig(): Promise<boolean> {
+        return (await this.validateConfig()).valid;
     }
 
-    static validateConfig(): { valid: boolean; error?: string } {
-        const authToken = this.getAuthToken();
+    static async validateConfig(): Promise<{ valid: boolean; error?: string }> {
+        const authToken = await this.getAuthToken();
         const baseUrl = this.getBaseUrl();
 
         if (!authToken) {
             return {
                 valid: false,
-                error: vscode.l10n.t('API Key is not configured. Please set glmPlanUsage.authToken in settings or GLM_API_KEY environment variable.')
+                error: vscode.l10n.t('API Key is not configured. Please use "GLM Plan Usage: Set API Key" command or set GLM_API_KEY environment variable.')
             };
         }
 
@@ -59,8 +74,8 @@ export class ConfigManager {
             };
         }
 
-        if (!baseUrl.includes('api.z.ai') && 
-            !baseUrl.includes('open.bigmodel.cn') && 
+        if (!baseUrl.includes('api.z.ai') &&
+            !baseUrl.includes('open.bigmodel.cn') &&
             !baseUrl.includes('dev.bigmodel.cn')) {
             return {
                 valid: false,

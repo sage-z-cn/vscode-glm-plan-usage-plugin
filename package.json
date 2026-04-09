@@ -37,7 +37,13 @@
     "commands": [
       {
         "command": "glmPlanUsage.query",
-        "title": "%command.query.title%"
+        "title": "%command.query.title%",
+        "description": "%command.query.description%"
+      },
+      {
+        "command": "glmPlanUsage.setToken",
+        "title": "%command.setToken.title%",
+        "description": "%command.setToken.description%"
       }
     ],
     "configuration": {
@@ -46,7 +52,8 @@
         "glmPlanUsage.authToken": {
           "type": "string",
           "default": "",
-          "description": "%configuration.authToken.description%"
+          "description": "%configuration.authToken.description%",
+          "deprecationMessage": "%configuration.authToken.deprecated%"
         },
         "glmPlanUsage.baseUrl": {
           "type": "string",

@@ -6,6 +6,7 @@ import { ConfigManager } from './config';
 import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
 const CACHE_KEY = 'glmPlanUsage.cache';
+const MIGRATION_KEY = 'glmPlanUsage.tokenMigrated';
 
 interface CachedUsage {
     data: UsageResponse;
@@ -16,6 +17,21 @@ let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
 let globalState: vscode.Memento;
 const warnedResetTimes = new Set<number>();
+
+// 将旧的 settings.json 明文 token 迁移到 SecretStorage
+async function migrateAuthToken(context: vscode.ExtensionContext): Promise<void> {
+    if (context.globalState.get<boolean>(MIGRATION_KEY)) { return; }
+
+    const config = vscode.workspace.getConfiguration('glmPlanUsage');
+    const oldToken = config.get<string>('authToken');
+
+    if (oldToken) {
+        await context.secrets.store('glmPlanUsage.authToken', oldToken);
+        await config.update('authToken', undefined, vscode.ConfigurationTarget.Global);
+    }
+
+    await context.globalState.update(MIGRATION_KEY, true);
+}
 
 function checkQuotaWarning(response: UsageResponse): void {
     const now = Date.now();
@@ -29,7 +45,6 @@ function checkQuotaWarning(response: UsageResponse): void {
     for (const item of response.quotaLimits) {
         if (item.percentage >= 90 && item.nextResetTime && !warnedResetTimes.has(item.nextResetTime)) {
             warnedResetTimes.add(item.nextResetTime);
-            // 根据配额类型显示不同的警告消息
             if (item.type === QUOTA_TYPE_5H) {
                 vscode.window.showWarningMessage(
                     vscode.l10n.t('⚠ GLM Plan 5-hour quota warning: {0}% used', item.percentage.toFixed(1))
@@ -71,10 +86,17 @@ export async function activate(context: vscode.ExtensionContext) {
     globalState = context.globalState;
     statusBarManager = new StatusBarManager();
 
+    // 初始化 SecretStorage
+    ConfigManager.initialize(context.secrets);
+
+    // 迁移旧的明文 token 到 SecretStorage
+    await migrateAuthToken(context);
+
+    // 查询配额命令
     const queryCommand = vscode.commands.registerCommand(
         'glmPlanUsage.query',
         async () => {
-            if (!ConfigManager.hasValidConfig()) {
+            if (!(await ConfigManager.hasValidConfig())) {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
                 return;
             }
@@ -83,10 +105,28 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     );
 
+    // 设置 API Key 命令
+    const setTokenCommand = vscode.commands.registerCommand(
+        'glmPlanUsage.setToken',
+        async () => {
+            const token = await vscode.window.showInputBox({
+                prompt: vscode.l10n.t('Enter your GLM API Key'),
+                password: true,
+                ignoreFocusOut: true
+            });
+            if (token !== undefined) {
+                await ConfigManager.setAuthToken(token);
+                vscode.window.showInformationMessage(vscode.l10n.t('API Key saved securely.'));
+                await queryUsage(true);
+            }
+        }
+    );
+
     context.subscriptions.push(queryCommand);
+    context.subscriptions.push(setTokenCommand);
     context.subscriptions.push(statusBarManager);
 
-    if (ConfigManager.hasValidConfig()) {
+    if (await ConfigManager.hasValidConfig()) {
         if (ConfigManager.getAutoRefresh()) {
             await queryUsage();
             setupAutoRefresh();
@@ -109,7 +149,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 async function queryUsage(forceRefresh = false): Promise<void> {
-    const validation = ConfigManager.validateConfig();
+    const validation = await ConfigManager.validateConfig();
     if (!validation.valid) {
         vscode.window.showErrorMessage(validation.error || vscode.l10n.t('Configuration is invalid'));
         statusBarManager.setError(vscode.l10n.t('Config invalid'));
@@ -148,7 +188,7 @@ function setupAutoRefresh(): void {
     const interval = ConfigManager.getRefreshInterval();
     if (interval > 0) {
         autoRefreshTimer = setInterval(async () => {
-            if (ConfigManager.hasValidConfig()) {
+            if (await ConfigManager.hasValidConfig()) {
                 await queryUsage();
             }
         }, interval * 1000);
@@ -156,19 +196,22 @@ function setupAutoRefresh(): void {
 }
 
 function handleConfigChange(): void {
-    if (ConfigManager.hasValidConfig()) {
-        if (ConfigManager.getAutoRefresh()) {
-            queryUsage();
-            setupAutoRefresh();
+    // 配置变更后异步检查
+    (async () => {
+        if (await ConfigManager.hasValidConfig()) {
+            if (ConfigManager.getAutoRefresh()) {
+                await queryUsage();
+                setupAutoRefresh();
+            } else {
+                statusBarManager.show();
+            }
         } else {
-            statusBarManager.show();
+            statusBarManager.setNotConfigured();
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
         }
-    } else {
-        statusBarManager.setNotConfigured();
-        if (autoRefreshTimer) {
-            clearInterval(autoRefreshTimer);
-        }
-    }
+    })();
 }
 
 export function deactivate() {

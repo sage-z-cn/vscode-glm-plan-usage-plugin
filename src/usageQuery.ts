@@ -170,10 +170,10 @@ export class UsageQueryService {
     }
 
     static async queryUsage(): Promise<UsageResponse> {
-        const authToken = ConfigManager.getAuthToken();
+        const authToken = await ConfigManager.getAuthToken();
         const baseUrl = ConfigManager.getBaseUrl();
 
-        const validation = ConfigManager.validateConfig();
+        const validation = await ConfigManager.validateConfig();
         if (!validation.valid) {
             throw new Error(validation.error);
         }
