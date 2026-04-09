@@ -22,7 +22,9 @@ export class ConfigManager {
 
     static getRefreshInterval(): number {
         const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
-        return config.get<number>('refreshInterval') ?? 300;
+        const interval = config.get<number>('refreshInterval') ?? 300;
+        // 最小刷新间隔60秒，防止高频请求
+        return Math.max(interval, 60);
     }
 
     static async setAuthToken(token: string): Promise<void> {

@@ -34,5 +34,6 @@
   "Error": "错误",
   "Click to retry": "点击重试",
   "API Key not configured.": "API Key 未配置。",
-  "Click to configure": "点击配置"
+  "Click to configure": "点击配置",
+  "Resetting": "重置中"
 }

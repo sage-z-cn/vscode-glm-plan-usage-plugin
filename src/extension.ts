@@ -78,7 +78,8 @@ export async function activate(context: vscode.ExtensionContext) {
                 vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
                 return;
             }
-            await queryUsage();
+            // 手动点击时跳过缓存，强制请求最新数据
+            await queryUsage(true);
         }
     );
 
@@ -107,7 +108,7 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('GLM Plan Usage extension activated successfully');
 }
 
-async function queryUsage(): Promise<void> {
+async function queryUsage(forceRefresh = false): Promise<void> {
     const validation = ConfigManager.validateConfig();
     if (!validation.valid) {
         vscode.window.showErrorMessage(validation.error || vscode.l10n.t('Configuration is invalid'));
@@ -118,12 +119,14 @@ async function queryUsage(): Promise<void> {
     statusBarManager.setLoading();
 
     try {
-        // 优先使用缓存
-        const cached = getCachedUsage();
-        if (cached) {
-            statusBarManager.updateUsage(cached);
-            checkQuotaWarning(cached);
-            return;
+        // 非强制刷新时，自动刷新场景优先使用缓存
+        if (!forceRefresh) {
+            const cached = getCachedUsage();
+            if (cached) {
+                statusBarManager.updateUsage(cached);
+                checkQuotaWarning(cached);
+                return;
+            }
         }
 
         const response = await UsageQueryService.queryUsage();

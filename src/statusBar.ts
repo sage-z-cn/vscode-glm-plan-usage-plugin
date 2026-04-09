@@ -12,11 +12,55 @@ function getCombinedColor(fiveHourPct: number | undefined, weeklyPct: number | u
     return '#89D185';
 }
 
-function formatResetTime(ts: number | undefined): string {
+function formatResetTime(ts: number | undefined, quotaType?: string): string {
     if (!ts) { return vscode.l10n.t('N/A'); }
     const d = new Date(ts);
     const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+    const now = Date.now();
+    const diff = ts - now;
+    let countdown: string;
+    if (diff <= 0) {
+        countdown = vscode.l10n.t('Resetting');
+    } else {
+        const totalMinutes = Math.floor(diff / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        const seconds = Math.floor((diff % 60000) / 1000);
+
+        if (quotaType === QUOTA_TYPE_5H) {
+            // 5小时配额：只显示分钟和秒
+            countdown = `${minutes}m ${seconds}s`;
+        } else if (quotaType === QUOTA_TYPE_WEEKLY) {
+            // 周配额：只显示天和小时
+            const days = Math.floor(hours / 24);
+            const remainHours = hours % 24;
+            const parts: string[] = [];
+            if (days > 0) { parts.push(`${days}d`); }
+            parts.push(`${remainHours}h`);
+            countdown = parts.join(' ');
+        } else {
+            const parts: string[] = [];
+            if (hours > 0) { parts.push(`${hours}h`); }
+            if (minutes > 0) { parts.push(`${minutes}m`); }
+            parts.push(`${seconds}s`);
+            countdown = parts.join(' ');
+        }
+    }
+
+    // 判断是否为当天
+    const today = new Date();
+    const isToday = d.getFullYear() === today.getFullYear()
+        && d.getMonth() === today.getMonth()
+        && d.getDate() === today.getDate();
+
+    if (isToday) {
+        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        return `${countdown} (${timeStr})`;
+    }
+
+    const fullStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    return `${countdown} (${fullStr})`;
 }
 
 function formatTokens(tokens: number): string {
@@ -111,7 +155,7 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('5 Hour Quota')}:**\n\n`);
             md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime)}\n\n`);
+            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
         }
 
         if (weeklyLimit) {
@@ -119,7 +163,7 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
             md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime)}\n\n`);
+            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
         }
 
         if (!fiveHourLimit && !weeklyLimit) {
