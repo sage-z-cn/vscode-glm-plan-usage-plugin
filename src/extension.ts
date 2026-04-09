@@ -5,8 +5,16 @@ import { ConfigManager } from './config';
 
 import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
+const CACHE_KEY = 'glmPlanUsage.cache';
+
+interface CachedUsage {
+    data: UsageResponse;
+    timestamp: number;
+}
+
 let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
+let globalState: vscode.Memento;
 const warnedResetTimes = new Set<number>();
 
 function checkQuotaWarning(response: UsageResponse): void {
@@ -39,9 +47,28 @@ function checkQuotaWarning(response: UsageResponse): void {
     }
 }
 
+function getCachedUsage(): UsageResponse | null {
+    const cached = globalState.get<CachedUsage>(CACHE_KEY);
+    if (!cached) {
+        return null;
+    }
+    // 缓存有效期：刷新间隔减去5秒，确保缓存过期时间早于下次刷新，避免多窗口重复请求
+    const ttl = Math.max(ConfigManager.getRefreshInterval() - 5, 0) * 1000;
+    if (Date.now() - cached.timestamp > ttl) {
+        return null;
+    }
+    return cached.data;
+}
+
+function setCachedUsage(data: UsageResponse): void {
+    const cached: CachedUsage = { data, timestamp: Date.now() };
+    globalState.update(CACHE_KEY, cached);
+}
+
 export async function activate(context: vscode.ExtensionContext) {
     console.log('GLM Plan Usage extension is activating...');
 
+    globalState = context.globalState;
     statusBarManager = new StatusBarManager();
 
     const queryCommand = vscode.commands.registerCommand(
@@ -91,7 +118,16 @@ async function queryUsage(): Promise<void> {
     statusBarManager.setLoading();
 
     try {
+        // 优先使用缓存
+        const cached = getCachedUsage();
+        if (cached) {
+            statusBarManager.updateUsage(cached);
+            checkQuotaWarning(cached);
+            return;
+        }
+
         const response = await UsageQueryService.queryUsage();
+        setCachedUsage(response);
         statusBarManager.updateUsage(response);
 
         checkQuotaWarning(response);
