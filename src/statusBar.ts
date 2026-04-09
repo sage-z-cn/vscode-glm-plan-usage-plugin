@@ -17,8 +17,8 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
     const d = new Date(ts);
     const pad = (n: number) => String(n).padStart(2, '0');
 
-    const now = Date.now();
-    const diff = ts - now;
+    const now = new Date();
+    const diff = ts - now.getTime();
     let countdown: string;
     if (diff <= 0) {
         countdown = vscode.l10n.t('Resetting');
@@ -29,16 +29,20 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
         const seconds = Math.floor((diff % 60000) / 1000);
 
         if (quotaType === QUOTA_TYPE_5H) {
-            // 5小时配额：只显示分钟和秒
-            countdown = `${minutes}m ${seconds}s`;
+            // 5小时配额：显示小时和分钟
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            countdown = `${hours}h ${minutes}m`;
         } else if (quotaType === QUOTA_TYPE_WEEKLY) {
-            // 周配额：只显示天和小时
+            // 周配额：如果大于1天则显示 xd xh，否则显示 xh xm
             const days = Math.floor(hours / 24);
             const remainHours = hours % 24;
-            const parts: string[] = [];
-            if (days > 0) { parts.push(`${days}d`); }
-            parts.push(`${remainHours}h`);
-            countdown = parts.join(' ');
+            if (days > 0) {
+                countdown = `${days}d ${remainHours}h`;
+            } else {
+                const minutes = totalMinutes % 60;
+                countdown = `${remainHours}h ${minutes}m`;
+            }
         } else {
             const parts: string[] = [];
             if (hours > 0) { parts.push(`${hours}h`); }
@@ -49,10 +53,9 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
     }
 
     // 判断是否为当天
-    const today = new Date();
-    const isToday = d.getFullYear() === today.getFullYear()
-        && d.getMonth() === today.getMonth()
-        && d.getDate() === today.getDate();
+    const isToday = d.getFullYear() === now.getFullYear()
+        && d.getMonth() === now.getMonth()
+        && d.getDate() === now.getDate();
 
     if (isToday) {
         const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
@@ -295,7 +298,8 @@ export class StatusBarManager implements vscode.Disposable {
             if (val === null || val === 0) {
                 bars += ' ';
             } else {
-                const level = Math.round((val / max) * levels);
+                // 设置最小高度为1（▁），确保有数据的柱子至少可见
+                const level = Math.max(1, Math.round((val / max) * levels));
                 bars += barChars[level];
             }
         }
@@ -332,7 +336,7 @@ export class StatusBarManager implements vscode.Disposable {
 
         const spaceWidth = Math.max(0, count - start.length - end.length);
 
-        return `${start}${'─'.repeat(spaceWidth)}${end}`;
+        return `${start}${' '.repeat(spaceWidth)}${end}`;
     }
 
     setError(message: string): void {
