@@ -98,6 +98,14 @@
 
 扩展会在启动时自动查询并定时刷新。
 
+### 更新日志
+
+#### 1.3.0
+- **安全性升级**：使用 SecretStorage 优化 Auth Token 存储，提高安全性
+- **性能优化**：使用缓存机制，优化多窗口接口轮询
+- **体验优化**：优化倒计时显示，配额重置时间改为倒计时格式
+- **安全存储**：API Key 自动迁移到操作系统密钥管理器，绝不会写入配置文件
+
 ---
 
 <a name="english"></a>
@@ -196,3 +204,11 @@ If you previously configured the API Key in `settings.json`, the extension will 
 3. Or click the quota indicator in the status bar directly for manual refresh
 
 The extension will automatically query on startup and refresh periodically.
+
+### Changelog
+
+#### 1.3.0
+- **Security Enhancement**: Migrated to SecretStorage for secure Auth Token storage
+- **Performance Optimization**: Implemented caching mechanism to optimize multi-window API polling
+- **UX Improvement**: Optimized countdown display format for quota reset times
+- **Secure Storage**: API Key automatically migrated to OS keychain manager, never written to config files
