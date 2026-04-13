@@ -33,12 +33,18 @@ export interface QuotaLimitData {
     nextResetTime?: number;
 }
 
+export interface ActiveDaysInfo {
+    activeDays: number;
+    totalDaysInWindow: number;
+}
+
 export interface UsageResponse {
     platform: Platform;
     modelUsage: ModelUsageData[];
     toolUsage: ToolUsageData[];
     quotaLimits: QuotaLimitData[];
     trend?: TrendData;
+    activeDaysInfo?: ActiveDaysInfo;
 }
 
 export interface TrendData {

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import { URL } from 'url';
-import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 import { ConfigManager } from './config';
 
 export class UsageQueryService {
@@ -170,6 +170,33 @@ export class UsageQueryService {
         };
     }
 
+    // 从 API 原始响应中解析活跃天数信息，独立于 trend 功能
+    private static parseActiveDaysInfo(raw: any): ActiveDaysInfo | undefined {
+        const xTime: string[] | undefined = raw?.x_time;
+        const tokensUsage: (number | null)[] | undefined = raw?.tokensUsage;
+        if (!xTime || !tokensUsage || xTime.length === 0) {
+            return undefined;
+        }
+
+        // 按日期分组，判断每天是否存在非零 token 使用
+        const dayExists = new Set<string>();
+        const dayActive = new Set<string>();
+
+        for (let i = 0; i < xTime.length; i++) {
+            const dateKey = xTime[i].split(' ')[0];
+            dayExists.add(dateKey);
+            const val = tokensUsage[i];
+            if (val !== null && val !== undefined && val > 0) {
+                dayActive.add(dateKey);
+            }
+        }
+
+        return {
+            activeDays: dayActive.size,
+            totalDaysInWindow: dayExists.size
+        };
+    }
+
     static async queryUsage(): Promise<UsageResponse> {
         const authToken = await ConfigManager.getAuthToken();
         const baseUrl = ConfigManager.getBaseUrl();
@@ -199,13 +226,15 @@ export class UsageQueryService {
         const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw?.modelUsage || modelUsageRaw);
         const toolUsage = this.ensureArray<ToolUsageData>(toolUsageRaw);
         const trend = this.processTrendData(modelUsageRaw);
+        const activeDaysInfo = this.parseActiveDaysInfo(modelUsageRaw);
 
         return {
             platform,
             modelUsage,
             toolUsage,
             quotaLimits,
-            trend
+            trend,
+            activeDaysInfo
         };
     }
 }

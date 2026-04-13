@@ -21,7 +21,7 @@
 - **国际化**：支持中文和英文界面
 - **安全存储**：API Key 使用操作系统级加密存储，不会明文写入配置文件
 
-### 截图
+### 界面示意
 
 #### 状态栏
 
@@ -69,6 +69,27 @@ GLM Plan Usage
 - 周配额进度条及下次刷新时间（倒计时格式）
 - 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
 - 今日趋势：Unicode 柱状图展示每小时使用情况
+
+### 预估算法
+
+配额预估基于线性速率推算，计算当前消耗速率在整个周期内的预计用量。
+
+**5 小时配额**：直接按时间线性预估
+
+```
+elapsed = 周期总时长 - (下次重置时间 - 当前时间)
+预估用量 = (当前占比 / elapsed) × 周期总时长
+```
+
+**周配额**：在线性预估基础上，基于活跃天数修正，剔除未使用的日期（如休息日、请假等）
+
+```
+activeRate = 有使用的天数 / 趋势窗口总天数
+effectiveElapsed = elapsed × activeRate
+预估用量 = (当前占比 / effectiveElapsed) × 周期总时长
+```
+
+当所有天数都有使用时 `activeRate = 1`，退化为标准线性预估。
 
 ### 配置
 
@@ -167,7 +188,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Internationalization**: Supports Chinese and English interface
 - **Secure Storage**: API Key is stored using OS-level encryption, never written in plain text
 
-### Screenshots
+### UI Preview
 
 #### Status Bar
 
@@ -215,6 +236,27 @@ The tooltip includes:
 - Weekly quota progress bar with next reset time (countdown format)
 - Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
 - Today Trend: Unicode bar chart showing hourly usage
+
+### Estimation Algorithm
+
+Quota estimation uses a linear rate projection, calculating the expected usage for the entire cycle based on current consumption rate.
+
+**5-Hour Quota**: Direct linear projection over time
+
+```
+elapsed = totalDuration - (nextResetTime - now)
+projected = (currentPercentage / elapsed) × totalDuration
+```
+
+**Weekly Quota**: Linear projection adjusted by active days, excluding unused days (e.g., rest days, leave, etc.)
+
+```
+activeRate = daysWithUsage / totalDaysInWindow
+effectiveElapsed = elapsed × activeRate
+projected = (currentPercentage / effectiveElapsed) × totalDuration
+```
+
+When all days have usage, `activeRate = 1`, falling back to standard linear projection.
 
 ### Configuration
 

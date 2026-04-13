@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, QuotaLimitData, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { UsageResponse, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
 interface ColorParams {
     fiveHourPct?: number;
@@ -108,11 +108,13 @@ function formatDuration(ms: number): string {
 
 /**
  * 计算预估是否会超出限额，统一按时间速率线性预估
+ * 周配额支持基于活跃天数修正，剔除未使用的日期
  */
 function calculateUsageEstimate(
     percentage: number,
     nextResetTime: number | undefined,
-    quotaType: string
+    quotaType: string,
+    activeDaysInfo?: ActiveDaysInfo | null
 ): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
     if (!nextResetTime || percentage <= 0) {
         return null;
@@ -126,8 +128,17 @@ function calculateUsageEstimate(
         return null;
     }
 
-    // 按已用时间线性预估整个周期用量
-    const projectedPercentage = (percentage / elapsed) * totalDuration;
+    // 周配额：基于活跃天数修正 elapsed，剔除未使用的日期
+    let effectiveElapsed = elapsed;
+    if (quotaType === QUOTA_TYPE_WEEKLY && activeDaysInfo && activeDaysInfo.totalDaysInWindow > 0) {
+        const { activeDays, totalDaysInWindow } = activeDaysInfo;
+        if (activeDays > 0 && activeDays < totalDaysInWindow) {
+            const activeRate = activeDays / totalDaysInWindow;
+            effectiveElapsed = elapsed * activeRate;
+        }
+    }
+
+    const projectedPercentage = (percentage / effectiveElapsed) * totalDuration;
 
     const msToExhaust = projectedPercentage > 0
         ? (100 - percentage) * totalDuration / projectedPercentage
@@ -214,7 +225,7 @@ export class StatusBarManager implements vscode.Disposable {
             ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)
             : null;
         const weeklyEstimate = weeklyLimit
-            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)
+            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, response.activeDaysInfo)
             : null;
 
         this.statusItem.color = getCombinedColor({
@@ -273,12 +284,11 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
             // 添加周配额使用预估
-            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY);
+            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, response.activeDaysInfo);
             if (estimate) {
                 const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
                 md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
-                // 显示预估限额用完时间
                 if (estimate.timeToExhaust) {
                     md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.projectedPercentage <= 100 ? vscode.l10n.t('Sufficient') : estimate.timeToExhaust}\n\n`);
                 }
