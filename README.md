@@ -25,13 +25,43 @@
 
 #### 状态栏
 
-![状态栏](assets/status-bar.png)
+状态栏右侧显示用量指标：
 
-状态栏右侧显示合并指标：`5h: XX.X% | Week: XX.X%`
+```
+GLM: 20% | 21%
+```
+
+- `20%` - 5小时配额使用率
+- `21%` - 周配额使用率
 
 #### 悬停显示
 
-![悬停显示](assets/tooltip-cn.png)
+```
+GLM Plan Usage
+更新时间: 2026/4/13 18:38:47
+
+5小时配额:
+████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.0%
+下次刷新: 0小时 20分钟 (18:59:46)
+预估用量: 39.8%
+预估时间: 7小时 55分钟
+
+周配额:
+████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
+下次刷新: 2天 22小时 (2026-04-16 17:02:32)
+预估用量: 58.5%
+预估时间: 7天 21时
+
+今日统计:
+• 今日 Token: 16.50M
+• 今日调用: 500
+• 峰值 Token: 5.89M (09:00)
+• 峰值调用: 145 (09:00)
+
+今日趋势:
+███    ██ ██
+8h     18h
+```
 
 悬停提示包含：
 - 更新时间
@@ -141,13 +171,43 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 #### Status Bar
 
-![Status Bar](assets/status-bar.png)
+Usage metrics displayed on the right side of the status bar:
 
-Combined indicator displayed on the right side of the status bar: `5h: XX.X% | Week: XX.X%`
+```
+GLM: 20% | 21%
+```
+
+- `20%` - 5-hour quota usage percentage
+- `21%` - Weekly quota usage percentage
 
 #### Tooltip
 
-![Tooltip](assets/tooltip-en.png)
+```
+GLM Plan Usage
+Updated: 2026/4/13 18:38:47
+
+5h Quota:
+████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.0%
+Next Reset: 0h 20m (18:59:46)
+Est. Usage: 39.8%
+Est. Time: 7h 55m
+
+Weekly Quota:
+████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
+Next Reset: 2d 22h (2026-04-16 17:02:32)
+Est. Usage: 58.5%
+Est. Time: 7d 21h
+
+Today Statistics:
+• Today Tokens: 16.50M
+• Today Calls: 500
+• Peak Token: 5.89M (09:00)
+• Peak Calls: 145 (09:00)
+
+Today Trend:
+███    ██ ██
+8h     18h
+```
 
 The tooltip includes:
 - Updated time

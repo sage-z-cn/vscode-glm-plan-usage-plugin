@@ -211,13 +211,13 @@ export class StatusBarManager implements vscode.Disposable {
         const weeklyPct = weeklyLimit?.percentage;
 
         if (fiveHourLimit !== undefined && weeklyLimit !== undefined) {
-            this.statusItem.text = `$(dashboard) GLM: ${fiveHourPct!.toFixed(0)}% | ${weeklyPct!.toFixed(0)}%`;
+            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% | ${weeklyPct!.toFixed(0)}%`;
         } else if (fiveHourLimit !== undefined) {
-            this.statusItem.text = `$(dashboard) GLM: 5h ${fiveHourPct!.toFixed(0)}%`;
+            this.statusItem.text = `GLM: 5h ${fiveHourPct!.toFixed(0)}%`;
         } else if (weeklyLimit !== undefined) {
-            this.statusItem.text = `$(dashboard) GLM: Week ${weeklyPct!.toFixed(0)}%`;
+            this.statusItem.text = `GLM: Week ${weeklyPct!.toFixed(0)}%`;
         } else {
-            this.statusItem.text = '$(dashboard) GLM: N/A';
+            this.statusItem.text = 'GLM: N/A';
         }
 
         // 计算预估是否会超出限额
@@ -249,7 +249,7 @@ export class StatusBarManager implements vscode.Disposable {
         const md = new vscode.MarkdownString(undefined, true);
         md.isTrusted = true;
 
-        md.appendMarkdown(`### $(dashboard) GLM Plan Usage\n\n`);
+        md.appendMarkdown(`### GLM Plan Usage\n\n`);
 
         const now = new Date();
         md.appendMarkdown(`**${vscode.l10n.t('Updated')}:** ${now.toLocaleString()}\n\n`);
