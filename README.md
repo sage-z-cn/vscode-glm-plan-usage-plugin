@@ -318,6 +318,9 @@ The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
 
+#### 1.4.1
+- Fixed typos
+
 #### 1.4.0
 - **Usage Projection**: Added quota usage estimation based on current consumption rate
   - Tooltip now displays projected quota exhaustion time
