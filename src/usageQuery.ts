@@ -26,10 +26,11 @@ export class UsageQueryService {
 
     private static getTimeWindow(): { startTime: string; endTime: string } {
         const now = new Date();
+        // 查询最近7天的数据
         const startDate = new Date(
             now.getFullYear(),
             now.getMonth(),
-            now.getDate(),
+            now.getDate() - 6,
             0,
             0,
             0,
