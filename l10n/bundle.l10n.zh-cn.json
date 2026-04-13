@@ -37,5 +37,12 @@
   "Click to configure": "点击配置",
   "Resetting": "重置中",
   "Enter your GLM API Key": "输入你的 GLM API Key",
-  "API Key saved securely.": "API Key 已安全保存。"
+  "API Key saved securely.": "API Key 已安全保存。",
+  "Usage Estimate": "预估用量",
+  "Time to exhaust": "预估时间",
+  "Already exceeded": "已超出",
+  "d": "天",
+  "h": "小时",
+  "m": "分钟",
+  "s": "秒"
 }

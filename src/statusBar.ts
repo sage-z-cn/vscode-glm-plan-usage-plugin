@@ -1,14 +1,29 @@
 import * as vscode from 'vscode';
 import { UsageResponse, QuotaLimitData, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
-function getCombinedColor(fiveHourPct: number | undefined, weeklyPct: number | undefined): string {
-    const maxPct = Math.max(fiveHourPct ?? 0, weeklyPct ?? 0);
+interface ColorParams {
+    fiveHourPct?: number;
+    weeklyPct?: number;
+    fiveHourWillExceed?: boolean;
+    weeklyWillExceed?: boolean;
+}
+
+function getCombinedColor(params: ColorParams): string {
+    const { fiveHourPct = 0, weeklyPct = 0, fiveHourWillExceed = false, weeklyWillExceed = false } = params;
+
+    const maxPct = Math.max(fiveHourPct, weeklyPct);
+    const willExceed = fiveHourWillExceed || weeklyWillExceed;
+
+    // 额度剩余不足10%（即使用超过90%）时显示红色
     if (maxPct >= 90) {
         return '#F44747';
     }
-    if (maxPct >= 70) {
+
+    // 预估会超出时显示黄色
+    if (willExceed) {
         return '#CCA700';
     }
+
     return '#89D185';
 }
 
@@ -32,22 +47,22 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
             // 5小时配额：显示小时和分钟
             const hours = Math.floor(totalMinutes / 60);
             const minutes = totalMinutes % 60;
-            countdown = `${hours}h ${minutes}m`;
+            countdown = `${hours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
         } else if (quotaType === QUOTA_TYPE_WEEKLY) {
             // 周配额：如果大于1天则显示 xd xh，否则显示 xh xm
             const days = Math.floor(hours / 24);
             const remainHours = hours % 24;
             if (days > 0) {
-                countdown = `${days}d ${remainHours}h`;
+                countdown = `${days}${vscode.l10n.t('d')} ${remainHours}${vscode.l10n.t('h')}`;
             } else {
                 const minutes = totalMinutes % 60;
-                countdown = `${remainHours}h ${minutes}m`;
+                countdown = `${remainHours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
             }
         } else {
             const parts: string[] = [];
-            if (hours > 0) { parts.push(`${hours}h`); }
-            if (minutes > 0) { parts.push(`${minutes}m`); }
-            parts.push(`${seconds}s`);
+            if (hours > 0) { parts.push(`${hours}${vscode.l10n.t('h')}`); }
+            if (minutes > 0) { parts.push(`${minutes}${vscode.l10n.t('m')}`); }
+            parts.push(`${seconds}${vscode.l10n.t('s')}`);
             countdown = parts.join(' ');
         }
     }
@@ -64,6 +79,81 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
 
     const fullStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     return `${countdown} (${fullStr})`;
+}
+
+/**
+ * 格式化时间间隔为可读字符串
+ * @param ms 毫秒数
+ * @returns 格式化后的时间字符串
+ */
+function formatDuration(ms: number): string {
+    if (ms <= 0) {
+        return vscode.l10n.t('Already exceeded');
+    }
+
+    const totalMinutes = Math.floor(ms / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const days = Math.floor(hours / 24);
+    const remainHours = hours % 24;
+
+    if (days > 0) {
+        return `${days}${vscode.l10n.t('d')} ${remainHours}${vscode.l10n.t('h')}`;
+    } else if (hours > 0) {
+        return `${hours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
+    } else {
+        return `${minutes}${vscode.l10n.t('m')}`;
+    }
+}
+
+/**
+ * 计算预估是否会超出限额
+ * @param percentage 当前使用百分比
+ * @param nextResetTime 下次重置时间戳
+ * @param quotaType 配额类型
+ * @returns 预估结果对象
+ */
+function calculateUsageEstimate(
+    percentage: number,
+    nextResetTime: number | undefined,
+    quotaType: string
+): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
+    if (!nextResetTime || percentage <= 0) {
+        return null;
+    }
+
+    const now = new Date().getTime();
+    const totalDuration = quotaType === QUOTA_TYPE_5H ? 5 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+    const elapsed = totalDuration - (nextResetTime - now);
+
+    if (elapsed <= 0) {
+        return null;
+    }
+
+    // 计算当前使用速率（百分比/毫秒）
+    const usageRate = percentage / elapsed;
+
+    // 预估到重置时的总使用百分比
+    const projectedPercentage = usageRate * totalDuration;
+
+    // 判断是否可能超出限额（超过95%视为可能超出）
+    const willExceed = projectedPercentage > 95;
+
+    let estimatedExhaustTime: number | undefined;
+    let timeToExhaust: string | undefined;
+
+    // 计算限额用完的时间：剩余百分比 / 使用速率
+    const remainingPercentage = 100 - percentage;
+    const msToExhaust = remainingPercentage / usageRate;
+    estimatedExhaustTime = now + msToExhaust;
+    timeToExhaust = formatDuration(msToExhaust);
+
+    return {
+        willExceed,
+        projectedPercentage: Math.min(projectedPercentage, 100),
+        estimatedExhaustTime,
+        timeToExhaust
+    };
 }
 
 function formatTokens(tokens: number): string {
@@ -130,7 +220,20 @@ export class StatusBarManager implements vscode.Disposable {
             this.statusItem.text = '$(dashboard) GLM: N/A';
         }
 
-        this.statusItem.color = getCombinedColor(fiveHourPct, weeklyPct);
+        // 计算预估是否会超出限额
+        const fiveHourEstimate = fiveHourLimit
+            ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)
+            : null;
+        const weeklyEstimate = weeklyLimit
+            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)
+            : null;
+
+        this.statusItem.color = getCombinedColor({
+            fiveHourPct,
+            weeklyPct,
+            fiveHourWillExceed: fiveHourEstimate?.willExceed ?? false,
+            weeklyWillExceed: weeklyEstimate?.willExceed ?? false
+        });
         this.buildTooltip(response);
         this.show();
     }
@@ -154,19 +257,41 @@ export class StatusBarManager implements vscode.Disposable {
         md.appendMarkdown(`---\n\n`);
 
         if (fiveHourLimit) {
-            const color = getCombinedColor(fiveHourLimit.percentage, undefined);
+            const color = getCombinedColor({ fiveHourPct: fiveHourLimit.percentage });
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('5 Hour Quota')}:**\n\n`);
             md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
+
+            // 添加5小时配额使用预估
+            const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H);
+            if (estimate) {
+                const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%</span>\n\n`);
+                // 显示预估限额用完时间
+                if (estimate.timeToExhaust) {
+                    md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust}\n\n`);
+                }
+            }
         }
 
         if (weeklyLimit) {
-            const color = getCombinedColor(undefined, weeklyLimit.percentage);
+            const color = getCombinedColor({ weeklyPct: weeklyLimit.percentage });
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
             md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
+
+            // 添加周配额使用预估
+            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY);
+            if (estimate) {
+                const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%</span>\n\n`);
+                // 显示预估限额用完时间
+                if (estimate.timeToExhaust) {
+                    md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust}\n\n`);
+                }
+            }
         }
 
         if (!fiveHourLimit && !weeklyLimit) {

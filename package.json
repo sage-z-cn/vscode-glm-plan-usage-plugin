@@ -1,8 +1,8 @@
 {
   "name": "glm-plan-usage",
-  "displayName": "%displayName%",
-  "description": "%description%",
-  "version": "1.3.0",
+  "displayName": "GLM Coding Plan Usage - 智谱 Coding Plan 用量统计",
+  "description": "智谱 GLM Coding Plan 服务的配额和使用统计 (Query quota and usage statistics for GLM Coding Plan service)",
+  "version": "1.4.0",
   "publisher": "sagez",
   "license": "MIT",
   "icon": "assets/icon.png",

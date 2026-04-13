@@ -1,6 +1,4 @@
 {
-  "displayName": "GLM Plan Usage",
-  "description": "Query quota and usage statistics for GLM Coding Plan service",
   "command.query.title": "GLM Plan Usage: Query Usage Statistics",
   "command.query.description": "Query current GLM plan usage and quota information",
   "command.setToken.title": "GLM Plan Usage: Set API Key",

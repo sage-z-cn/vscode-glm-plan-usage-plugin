@@ -8,10 +8,10 @@
 
 ### 功能特性
 
-- **状态栏监控**：实时显示 5 小时和周配额使用百分比，颜色随使用率变化
-  - 🟢 绿色：< 70%
-  - 🟡 黄色：70% ~ 89%
-  - 🔴 红色：≥ 90%
+- **状态栏监控**：实时显示 5 小时和周配额使用百分比，智能颜色预警
+  - � 红色：配额使用 ≥ 90%（剩余不足 10%）
+  - 🟡 黄色：预估会在刷新前超出限额
+  - � 绿色：正常使用
 - **富文本提示**：鼠标悬停显示详细配额信息和今日使用趋势图
 - **今日统计**：显示今日 Token 用量、调用次数、峰值数据
 - **趋势图表**：Unicode 柱状图展示今日每小时使用趋势
@@ -99,6 +99,15 @@
 扩展会在启动时自动查询并定时刷新。
 
 ### 更新日志
+
+#### 1.4.0
+- **使用预估**：基于当前消耗速率添加配额使用预估
+  - Tooltip 显示预估配额用完时间
+  - 当预估会超出限额时显示警告
+- **智能状态栏颜色**：增强颜色逻辑以提供更好的视觉反馈
+  - 🔴 红色：配额使用 ≥ 90%（剩余不足 10%）
+  - 🟡 黄色：预估会在刷新前超出限额
+  - 🟢 绿色：正常使用
 
 #### 1.3.0
 - **安全性升级**：使用 SecretStorage 优化 Auth Token 存储，提高安全性
@@ -206,6 +215,15 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.4.0
+- **Usage Projection**: Added quota usage estimation based on current consumption rate
+  - Tooltip now displays projected quota exhaustion time
+  - Shows warning when projected to exceed quota limit
+- **Smart Status Bar Colors**: Enhanced color logic for better visual feedback
+  - 🔴 Red: When quota usage ≥ 90% (less than 10% remaining)
+  - 🟡 Yellow: When projected to exceed quota limit before reset
+  - 🟢 Green: Normal usage
 
 #### 1.3.0
 - **Security Enhancement**: Migrated to SecretStorage for secure Auth Token storage
