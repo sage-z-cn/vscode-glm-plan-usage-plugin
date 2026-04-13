@@ -1,6 +1,6 @@
 # GLM Plan Usage
 
-[English Intro](#english)
+[Scroll down for English introduction](#english)
 
 ---
 
