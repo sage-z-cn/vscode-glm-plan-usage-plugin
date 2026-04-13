@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Extension",
+      "name": "run",
       "type": "extensionHost",
       "request": "launch",
       "args": [
@@ -14,7 +14,7 @@
       "preLaunchTask": "npm: compile"
     },
     {
-      "name": "Package Extension",
+      "name": "build",
       "type": "extensionHost",
       "request": "launch",
       "preLaunchTask": "vsce: package",
