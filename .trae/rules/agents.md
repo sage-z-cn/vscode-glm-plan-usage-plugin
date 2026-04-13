@@ -25,6 +25,13 @@
 }
 ```
 
+## README 同步
+
+`README.md` 包含中文和英文两个完整版本，修改时必须同步更新对应部分：
+- 中文版本（以中文标题标识，如"悬停显示"、"功能特性"等）
+- 英文版本（以英文标题标识，如"Tooltip"、"Features"等）
+
 **总结**：
 - 修改 `package.json` 相关配置 → 更新 `package.nls.json` 和 `package.nls.zh-cn.json`
 - 修改代码中的文本 → 更新 `l10n/bundle.l10n.zh-cn.json`
+- 修改 `README.md` → 同步更新中文和英文对应部分

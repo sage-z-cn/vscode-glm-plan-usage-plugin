@@ -107,16 +107,48 @@ function formatDuration(ms: number): string {
 }
 
 /**
+ * 统计 trend 数据中有使用记录的天数
+ * 通过 xTime 的日期部分和对应的 yValue 判断某天是否有使用
+ */
+function countActiveDays(trend?: TrendData): number {
+    if (!trend || !trend.xTime || !trend.yValue) {
+        return 0;
+    }
+
+    const dayMap = new Map<string, number>();
+    for (let i = 0; i < trend.xTime.length; i++) {
+        const timeStr = trend.xTime[i];
+        // xTime 格式为 "YYYY-MM-DD HH:mm:ss"，取日期部分
+        const day = timeStr.split(' ')[0];
+        const val = trend.yValue[i];
+        const prev = dayMap.get(day) || 0;
+        dayMap.set(day, prev + (val ?? 0));
+    }
+
+    // 有使用量大于0的天即为活跃天
+    let activeDays = 0;
+    for (const total of dayMap.values()) {
+        if (total > 0) {
+            activeDays++;
+        }
+    }
+
+    return activeDays;
+}
+
+/**
  * 计算预估是否会超出限额
  * @param percentage 当前使用百分比
  * @param nextResetTime 下次重置时间戳
  * @param quotaType 配额类型
+ * @param activeDays 周期内有使用数据的天数（仅周配额使用）
  * @returns 预估结果对象
  */
 function calculateUsageEstimate(
     percentage: number,
     nextResetTime: number | undefined,
-    quotaType: string
+    quotaType: string,
+    activeDays?: number
 ): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
     if (!nextResetTime || percentage <= 0) {
         return null;
@@ -130,27 +162,45 @@ function calculateUsageEstimate(
         return null;
     }
 
-    // 计算当前使用速率（百分比/毫秒）
-    const usageRate = percentage / elapsed;
+    let projectedPercentage: number;
+    let msToExhaust: number;
 
-    // 预估到重置时的总使用百分比
-    const projectedPercentage = usageRate * totalDuration;
+    // 基于时间速率的通用预估
+    const timeUsageRate = percentage / elapsed;
+    const timeProjected = timeUsageRate * totalDuration;
+    const timeMsToExhaust = (100 - percentage) / timeUsageRate;
 
-    // 判断是否可能超出限额（超过95%视为可能超出）
+    if (quotaType === QUOTA_TYPE_WEEKLY && activeDays && activeDays > 0) {
+        // 周配额：按活跃天数预估日均用量 × 7天
+        const dailyAvg = percentage / activeDays;
+        const activeProjected = dailyAvg * 7;
+        const activeDaysToExhaust = (100 - percentage) / dailyAvg;
+        const activeMsToExhaust = activeDaysToExhaust * 24 * 60 * 60 * 1000;
+
+        if (activeDays >= 3) {
+            // 活跃天数充足（≥3天），直接使用活跃天数速率预估
+            projectedPercentage = activeProjected;
+            msToExhaust = activeMsToExhaust;
+        } else {
+            // 活跃天数不足时，使用时间速率和活跃天数速率的加权平均
+            // 活跃天数越少，越依赖时间速率，避免极端值
+            const activeWeight = activeDays / 3;
+            projectedPercentage = activeWeight * activeProjected + (1 - activeWeight) * timeProjected;
+            msToExhaust = activeWeight * activeMsToExhaust + (1 - activeWeight) * timeMsToExhaust;
+        }
+    } else {
+        // 5小时配额或无 trend 数据时，按时间速率预估
+        projectedPercentage = timeProjected;
+        msToExhaust = timeMsToExhaust;
+    }
+
     const willExceed = projectedPercentage > 95;
-
-    let estimatedExhaustTime: number | undefined;
-    let timeToExhaust: string | undefined;
-
-    // 计算限额用完的时间：剩余百分比 / 使用速率
-    const remainingPercentage = 100 - percentage;
-    const msToExhaust = remainingPercentage / usageRate;
-    estimatedExhaustTime = now + msToExhaust;
-    timeToExhaust = formatDuration(msToExhaust);
+    const estimatedExhaustTime = msToExhaust > 0 ? now + msToExhaust : undefined;
+    const timeToExhaust = msToExhaust > 0 ? formatDuration(msToExhaust) : vscode.l10n.t('Already exceeded');
 
     return {
         willExceed,
-        projectedPercentage: Math.min(projectedPercentage, 100),
+        projectedPercentage,
         estimatedExhaustTime,
         timeToExhaust
     };
@@ -220,12 +270,15 @@ export class StatusBarManager implements vscode.Disposable {
             this.statusItem.text = 'GLM: N/A';
         }
 
+        // 统计活跃天数用于周配额预估
+        const activeDays = countActiveDays(response.trend);
+
         // 计算预估是否会超出限额
         const fiveHourEstimate = fiveHourLimit
             ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)
             : null;
         const weeklyEstimate = weeklyLimit
-            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)
+            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, activeDays)
             : null;
 
         this.statusItem.color = getCombinedColor({
@@ -239,6 +292,9 @@ export class StatusBarManager implements vscode.Disposable {
     }
 
     private buildTooltip(response: UsageResponse): void {
+        // 统计活跃天数用于周配额预估
+        const activeDays = countActiveDays(response.trend);
+
         const fiveHourLimit = response.quotaLimits.find(
             (limit) => limit.type === QUOTA_TYPE_5H
         );
@@ -283,7 +339,7 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
             // 添加周配额使用预估
-            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY);
+            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, activeDays);
             if (estimate) {
                 const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%</span>\n\n`);
