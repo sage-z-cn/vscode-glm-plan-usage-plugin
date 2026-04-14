@@ -11,5 +11,6 @@
   "configuration.baseUrl.enum.dev": "ZHIPU 开发平台 (dev.bigmodel.cn)",
   "configuration.baseUrl.enum.zai": "Z.ai 平台 (api.z.ai)",
   "configuration.autoRefresh.description": "启动时自动刷新使用统计",
-  "configuration.refreshInterval.description": "自动刷新间隔（秒），设为 0 禁用"
+  "configuration.refreshInterval.description": "自动刷新间隔（秒），最小值 60，设为 0 禁用",
+  "configuration.afkThreshold.description": "闲置检测阈值（秒），设为 0 禁用，需大于刷新间隔才生效。闲置期间暂停自动刷新"
 }

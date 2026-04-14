@@ -79,6 +79,11 @@
           "type": "number",
           "default": 300,
           "description": "%configuration.refreshInterval.description%"
+        },
+        "glmPlanUsage.afkThreshold": {
+          "type": "number",
+          "default": 1800,
+          "description": "%configuration.afkThreshold.description%"
         }
       }
     }

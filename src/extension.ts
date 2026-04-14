@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { UsageQueryService } from './usageQuery';
 import { StatusBarManager } from './statusBar';
 import { ConfigManager } from './config';
-
-import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { ActivityMonitor } from './activityMonitor';
+import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } from './types';
 
 const CACHE_KEY = 'glmPlanUsage.cache';
 const MIGRATION_KEY = 'glmPlanUsage.tokenMigrated';
@@ -17,6 +17,15 @@ let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
 let globalState: vscode.Memento;
 const warnedResetTimes = new Set<number>();
+
+/** 用户活动监控器实例 */
+let activityMonitor: ActivityMonitor | undefined;
+/** 上一次用户活动状态，用于检测状态变化 */
+let previousState: UserActivityState = UserActivityState.ACTIVE;
+/** AFK 恢复刷新防抖标记，避免重复触发 */
+let isRefreshing = false;
+/** 扩展上下文，用于配置变更时重新初始化 AFK 监控 */
+let extensionContext: vscode.ExtensionContext;
 
 // 将旧的 settings.json 明文 token 迁移到 SecretStorage
 async function migrateAuthToken(context: vscode.ExtensionContext): Promise<void> {
@@ -84,6 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
     console.log('GLM Plan Usage extension is activating...');
 
     globalState = context.globalState;
+    extensionContext = context;
     statusBarManager = new StatusBarManager();
 
     // 初始化 SecretStorage
@@ -125,6 +135,11 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(queryCommand);
     context.subscriptions.push(setTokenCommand);
     context.subscriptions.push(statusBarManager);
+
+    // 初始化 AFK 检测
+    if (ConfigManager.isAFKDetectionEnabled()) {
+        initializeAFKMonitoring(context);
+    }
 
     if (await ConfigManager.hasValidConfig()) {
         if (ConfigManager.getAutoRefresh()) {
@@ -183,9 +198,16 @@ async function queryUsage(forceRefresh = false): Promise<void> {
 function setupAutoRefresh(): void {
     if (autoRefreshTimer) {
         clearInterval(autoRefreshTimer);
+        autoRefreshTimer = undefined;
     }
 
-    const interval = ConfigManager.getRefreshInterval();
+    const interval = getCurrentPollingInterval();
+
+    // AFK 状态下返回 -1，完全停止轮询
+    if (interval === -1) {
+        return;
+    }
+
     if (interval > 0) {
         autoRefreshTimer = setInterval(async () => {
             if (await ConfigManager.hasValidConfig()) {
@@ -195,7 +217,54 @@ function setupAutoRefresh(): void {
     }
 }
 
+/** 获取当前轮询间隔，AFK 状态下返回 -1 表示停止轮询 */
+function getCurrentPollingInterval(): number {
+    if (activityMonitor && activityMonitor.getState() === UserActivityState.AFK) {
+        return -1;
+    }
+    return ConfigManager.getRefreshInterval();
+}
+
+/** 初始化 AFK 监控 */
+function initializeAFKMonitoring(context: vscode.ExtensionContext): void {
+    const afkThreshold = ConfigManager.getAFKThreshold();
+    activityMonitor = new ActivityMonitor(afkThreshold, handleActivityStateChange);
+    context.subscriptions.push(activityMonitor);
+}
+
+/** 处理用户活动状态变化 */
+function handleActivityStateChange(newState: UserActivityState): void {
+    const oldState = previousState;
+    previousState = newState;
+
+    // 更新状态栏外观
+    statusBarManager.setUserActivityState(newState);
+
+    // 调整轮询间隔
+    setupAutoRefresh();
+
+    // AFK 恢复时立即刷新（带防抖，避免重复触发）
+    if (oldState === UserActivityState.AFK && newState === UserActivityState.ACTIVE && !isRefreshing) {
+        isRefreshing = true;
+        setTimeout(async () => {
+            await queryUsage(true);
+            isRefreshing = false;
+        }, 1000);
+    }
+}
+
 function handleConfigChange(): void {
+    // 先处理 AFK 配置变更
+    const oldAFKEnabled = ConfigManager.isAFKDetectionEnabled();
+    const oldThreshold = ConfigManager.getAFKThreshold();
+    ConfigManager.reloadAFKConfig();
+    const newAFKEnabled = ConfigManager.isAFKDetectionEnabled();
+    const newThreshold = ConfigManager.getAFKThreshold();
+
+    if (oldAFKEnabled !== newAFKEnabled || oldThreshold !== newThreshold) {
+        handleAFKConfigChange(oldAFKEnabled, newAFKEnabled, newThreshold);
+    }
+
     // 配置变更后异步检查
     (async () => {
         if (await ConfigManager.hasValidConfig()) {
@@ -214,9 +283,36 @@ function handleConfigChange(): void {
     })();
 }
 
+/** 处理 AFK 配置变更：启用/禁用/参数变更 */
+function handleAFKConfigChange(oldEnabled: boolean, newEnabled: boolean, newThreshold: number): void {
+    // 禁用 -> 销毁 monitor
+    if (!newEnabled && activityMonitor) {
+        activityMonitor.dispose();
+        activityMonitor = undefined;
+        previousState = UserActivityState.ACTIVE;
+        statusBarManager.setUserActivityState(UserActivityState.ACTIVE);
+        return;
+    }
+
+    // 启用 -> 创建 monitor
+    if (newEnabled && !activityMonitor) {
+        initializeAFKMonitoring(extensionContext);
+        return;
+    }
+
+    // 参数变更 -> 更新 monitor 阈值
+    if (activityMonitor && newEnabled) {
+        activityMonitor.updateThreshold(newThreshold);
+    }
+}
+
 export function deactivate() {
     if (autoRefreshTimer) {
         clearInterval(autoRefreshTimer);
+    }
+    if (activityMonitor) {
+        activityMonitor.dispose();
+        activityMonitor = undefined;
     }
     console.log('GLM Plan Usage extension deactivated');
 }

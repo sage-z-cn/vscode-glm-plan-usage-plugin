@@ -11,5 +11,6 @@
   "configuration.baseUrl.enum.dev": "ZHIPU Dev Platform (dev.bigmodel.cn)",
   "configuration.baseUrl.enum.zai": "Z.ai Platform (api.z.ai)",
   "configuration.autoRefresh.description": "Automatically refresh usage statistics on startup",
-  "configuration.refreshInterval.description": "Auto-refresh interval in seconds (0 to disable)"
+  "configuration.refreshInterval.description": "Auto-refresh interval in seconds, minimum 60 (0 to disable)",
+  "configuration.afkThreshold.description": "AFK threshold in seconds, set to 0 to disable, must be greater than refresh interval to take effect. Auto-refresh is paused during AFK."
 }

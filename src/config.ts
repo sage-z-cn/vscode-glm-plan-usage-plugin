@@ -56,6 +56,35 @@ export class ConfigManager {
         return (await this.validateConfig()).valid;
     }
 
+    /** AFK 阈值缓存（秒） */
+    private static afkThreshold: number | null = null;
+
+    /** 获取 AFK 阈值（秒），带缓存 */
+    static getAFKThreshold(): number {
+        if (this.afkThreshold === null) {
+            this.afkThreshold = this.loadAFKThreshold();
+        }
+        return this.afkThreshold;
+    }
+
+    /** 从配置中加载 AFK 阈值 */
+    private static loadAFKThreshold(): number {
+        const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+        return config.get<number>('afkThreshold', 0);
+    }
+
+    /** 判断 AFK 检测是否启用：阈值 > 0 且 >= 刷新间隔 */
+    static isAFKDetectionEnabled(): boolean {
+        const threshold = this.getAFKThreshold();
+        const refreshInterval = this.getRefreshInterval();
+        return threshold > 0 && threshold >= refreshInterval;
+    }
+
+    /** 重新加载 AFK 配置（配置变更时调用） */
+    static reloadAFKConfig(): void {
+        this.afkThreshold = this.loadAFKThreshold();
+    }
+
     static async validateConfig(): Promise<{ valid: boolean; error?: string }> {
         const authToken = await this.getAuthToken();
         const baseUrl = this.getBaseUrl();

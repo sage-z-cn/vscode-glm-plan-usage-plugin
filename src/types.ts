@@ -2,6 +2,14 @@
 export const QUOTA_TYPE_5H = 'Token usage(5 Hour)';
 export const QUOTA_TYPE_WEEKLY = 'Token usage(Weekly)';
 
+/** 用户活动状态枚举 */
+export enum UserActivityState {
+    /** 用户活跃中 */
+    ACTIVE,
+    /** 用户AFK（未活动超过阈值） */
+    AFK
+}
+
 export type Platform = 'ZAI' | 'ZHIPU';
 
 export interface UsageQueryConfig {

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { UsageResponse, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } from './types';
 
 /** 趋势数据的通用切片，用于 getPeakToken / getPeakCalls / buildSparkline */
 interface TrendSlice {
@@ -193,6 +193,10 @@ export class StatusBarManager implements vscode.Disposable {
     private statusItem: vscode.StatusBarItem;
     private outputChannel: vscode.OutputChannel;
     private lastResponse: UsageResponse | null = null;
+    /** 当前用户活动状态，用于控制 AFK 时的颜色 */
+    private userActivityState: UserActivityState = UserActivityState.ACTIVE;
+    /** AFK 状态下的主题禁用色，自动适配深浅主题 */
+    private static readonly COLOR_AFK = new vscode.ThemeColor('disabledForeground');
 
     constructor() {
         this.statusItem = vscode.window.createStatusBarItem(
@@ -208,6 +212,25 @@ export class StatusBarManager implements vscode.Disposable {
     }
 
     show(): void {
+        this.statusItem.show();
+    }
+
+    /** 设置用户活动状态并更新状态栏外观颜色 */
+    setUserActivityState(state: UserActivityState): void {
+        this.userActivityState = state;
+        this.updateStatusBarAppearance();
+    }
+
+    /** 根据用户活动状态更新状态栏外观，AFK 时使用主题禁用色并显示 AFK 文本 */
+    private updateStatusBarAppearance(): void {
+        if (this.userActivityState === UserActivityState.AFK) {
+            this.statusItem.color = StatusBarManager.COLOR_AFK;
+            this.statusItem.text = 'GLM: AFK';
+            this.statusItem.tooltip = undefined;
+        } else if (this.lastResponse) {
+            // 恢复活跃状态时，由轮询数据决定颜色和文本
+            this.updateUsage(this.lastResponse);
+        }
         this.statusItem.show();
     }
 
