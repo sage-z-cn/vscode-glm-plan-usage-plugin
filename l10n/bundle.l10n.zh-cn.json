@@ -1,6 +1,6 @@
 {
-  "API Key is not configured. Please use \"GLM Plan Usage: Set API Key\" command or set GLM_API_KEY environment variable.": "API Key 未配置。请使用 \"GLM Plan Usage: 设置 API Key\" 命令或设置 GLM_API_KEY 环境变量。",
-  "Base URL is not configured. Please set glmPlanUsage.baseUrl in settings or GLM_BASE_URL environment variable.": "API 地址未配置。请在设置中配置 glmPlanUsage.baseUrl 或设置 GLM_BASE_URL 环境变量。",
+  "API Key is not configured. Please use \"GLM Plan Usage: Set API Key\" command.": "API Key 未配置。请使用 \"GLM Plan Usage: 设置 API Key\" 命令进行配置。",
+  "Base URL is not configured. Please set glmPlanUsage.baseUrl in settings.": "API 地址未配置。请在设置中配置 glmPlanUsage.baseUrl。",
   "Unsupported base URL. Supported: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn": "不支持的基础 URL。支持: api.z.ai, open.bigmodel.cn, dev.bigmodel.cn",
   "Failed to query usage: {0}": "查询使用情况失败: {0}",
   "⚠ GLM Plan quota warning: {0} has reached {1}%": "⚠ GLM Plan 配额警告: {0} 已达 {1}%",
