@@ -43,14 +43,14 @@ GLM Plan Usage
 5小时配额:
 ████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.0%
 下次刷新: 0小时 20分钟 (18:59:46)
+预计用完: 3小时 55分钟
 预估用量: 39.8%
-预计用尽: 7小时 55分钟
 
 周配额:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
 下次刷新: 2天 22小时 (2026-04-16 17:02:32)
+预计完: 5天 21时
 预估用量: 58.5%
-预计用尽: 7天 21时
 
 今日统计:
 • 今日 Token: 16.50M
@@ -227,14 +227,14 @@ Updated: 2026/4/13 18:38:47
 5h Quota:
 ████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.0%
 Next Reset: 0h 20m (18:59:46)
+Est. Exhaust: 3h 55m
 Est. Usage: 39.8%
-Est. Exhaust: 7h 55m
 
 Weekly Quota:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
 Next Reset: 2d 22h (2026-04-16 17:02:32)
+Est. Exhaust: 5d 21h
 Est. Usage: 58.5%
-Est. Exhaust: 7d 21h
 
 Today Statistics:
 • Today Tokens: 16.50M
@@ -330,6 +330,9 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.5.1
+- **Algorithm Fix**: Fixed estimated time to exhaust algorithm
 
 #### 1.5.0
 - **AFK Detection**: Added user AFK (Away From Keyboard) detection, auto-refresh polling is paused during AFK

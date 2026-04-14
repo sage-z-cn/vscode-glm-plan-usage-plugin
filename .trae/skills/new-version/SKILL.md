@@ -19,6 +19,10 @@ Invoke this skill when:
 - User asks to update the changelog for a new release
 - User mentions "new version", "release", "bump version", "新建版本", "发布版本", "更新版本号"
 
+## Important: Scope Limitation
+
+**This skill ONLY updates version numbers and changelogs.** It does NOT modify any source code, configuration, or algorithms — even if the changelog description mentions code changes. The changelog content describes what was changed elsewhere; it is not an instruction to make those changes.
+
 ## Step 1: Collect Information
 
 If the user has NOT specified the version number and/or changelog content, ask them using the AskUserQuestion tool:
