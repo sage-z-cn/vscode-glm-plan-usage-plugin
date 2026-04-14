@@ -34,6 +34,20 @@ function getCombinedColor(params: ColorParams): string {
     return '#89D185';
 }
 
+/** 仅格式化日期时间，不带倒计时前缀，用于预估用尽时间的日期展示 */
+function formatDateTimeOnly(ts: number): string {
+    const d = new Date(ts);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const now = new Date();
+    const isToday = d.getFullYear() === now.getFullYear()
+        && d.getMonth() === now.getMonth()
+        && d.getDate() === now.getDate();
+    if (isToday) {
+        return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function formatResetTime(ts: number | undefined, quotaType?: string): string {
     if (!ts) { return vscode.l10n.t('N/A'); }
     const d = new Date(ts);
@@ -80,11 +94,11 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
         && d.getDate() === now.getDate();
 
     if (isToday) {
-        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
         return `${countdown} (${timeStr})`;
     }
 
-    const fullStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const fullStr = `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     return `${countdown} (${fullStr})`;
 }
 
@@ -163,8 +177,9 @@ function calculateUsageEstimate(
 
     const projectedPercentage = (percentage / effectiveElapsed) * totalDuration;
 
+    // 预估用完 100% 所需的实际 elapsed 时间，再减去已过的实际时间得到从 now 起的剩余时间
     const msToExhaust = projectedPercentage > 0
-        ? (100 - percentage) * totalDuration / projectedPercentage
+        ? totalDuration * 100 / projectedPercentage - elapsed
         : 0;
 
     const willExceed = projectedPercentage > 95;
@@ -312,13 +327,20 @@ export class StatusBarManager implements vscode.Disposable {
             // 添加5小时配额使用预估
             const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H);
             if (estimate) {
+                // 显示预估限额用完时间
+                if (estimate.timeToExhaust) {
+                    if (estimate.projectedPercentage <= 100) {
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                    } else {
+                        const exhaustDate = estimate.estimatedExhaustTime
+                            ? formatDateTimeOnly(estimate.estimatedExhaustTime)
+                            : '';
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})\n\n`);
+                    }
+                }
                 const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
                 md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
-                // 显示预估限额用完时间
-                if (estimate.timeToExhaust) {
-                    md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.projectedPercentage <= 100 ? vscode.l10n.t('Sufficient') : estimate.timeToExhaust}\n\n`);
-                }
             }
         }
 
@@ -332,12 +354,19 @@ export class StatusBarManager implements vscode.Disposable {
             // 添加周配额使用预估
             const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, response.activeDaysInfo);
             if (estimate) {
+                if (estimate.timeToExhaust) {
+                    if (estimate.projectedPercentage <= 100) {
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                    } else {
+                        const exhaustDate = estimate.estimatedExhaustTime
+                            ? formatDateTimeOnly(estimate.estimatedExhaustTime)
+                            : '';
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})\n\n`);
+                    }
+                }
                 const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
                 md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
-                if (estimate.timeToExhaust) {
-                    md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.projectedPercentage <= 100 ? vscode.l10n.t('Sufficient') : estimate.timeToExhaust}\n\n`);
-                }
             }
         }
 
