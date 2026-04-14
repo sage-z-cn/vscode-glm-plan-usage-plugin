@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 import { UsageResponse, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
 
+/** 趋势数据的通用切片，用于 getPeakToken / getPeakCalls / buildSparkline */
+interface TrendSlice {
+    xTime: string[];
+    yValue: (number | null)[];
+    modelCallCount: (number | null)[];
+}
+
 interface ColorParams {
     fiveHourPct?: number;
     weeklyPct?: number;
@@ -300,24 +307,27 @@ export class StatusBarManager implements vscode.Disposable {
         }
 
         if (response.trend) {
+            // 根据当天日期筛选今日数据
+            const todayData = this.filterTodayData(response.trend);
+
             md.appendMarkdown(`---\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Today Statistics')}:**\n\n`);
 
-            md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(response.trend.totalUsage.totalTokensUsage)}\n`);
-            md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${response.trend.totalUsage.totalModelCallCount}\n`);
+            md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n`);
+            md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n`);
 
-            const peakToken = this.getPeakToken(response.trend);
+            const peakToken = this.getPeakToken(todayData);
             if (peakToken) {
                 md.appendMarkdown(`- ${vscode.l10n.t('Peak Token')}: ${formatTokens(peakToken.tokens)} (${peakToken.time})\n`);
             }
 
-            const peakCalls = this.getPeakCalls(response.trend);
+            const peakCalls = this.getPeakCalls(todayData);
             if (peakCalls) {
                 md.appendMarkdown(`- ${vscode.l10n.t('Peak Calls')}: ${peakCalls.calls} (${peakCalls.time})\n`);
             }
             md.appendMarkdown('\n');
 
-            const sparkline = this.buildSparkline(response.trend);
+            const sparkline = this.buildSparkline(todayData);
             if (sparkline) {
                 md.appendMarkdown(`**${vscode.l10n.t('Today Trend')}:**\n\n`);
                 md.appendMarkdown('```\n');
@@ -332,7 +342,47 @@ export class StatusBarManager implements vscode.Disposable {
         this.statusItem.tooltip = md;
     }
 
-    private getPeakToken(trend: TrendData): { tokens: number; time: string } | null {
+    /**
+     * 根据xTime字段筛选当天数据，返回今日的tokens、calls及对应的趋势数据
+     */
+    private filterTodayData(trend: TrendData): {
+        totalTokens: number;
+        totalCalls: number;
+        xTime: string[];
+        yValue: (number | null)[];
+        modelCallCount: (number | null)[];
+    } {
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        const todayXTime: string[] = [];
+        const todayYValue: (number | null)[] = [];
+        const todayModelCallCount: (number | null)[] = [];
+        let totalTokens = 0;
+        let totalCalls = 0;
+
+        for (let i = 0; i < trend.xTime.length; i++) {
+            const timeStr = trend.xTime[i];
+            if (timeStr.startsWith(todayStr)) {
+                todayXTime.push(timeStr);
+                todayYValue.push(trend.yValue[i]);
+                todayModelCallCount.push(trend.modelCallCount[i]);
+
+                const tokenVal = trend.yValue[i];
+                if (tokenVal !== null && tokenVal !== undefined) {
+                    totalTokens += tokenVal;
+                }
+                const callVal = trend.modelCallCount[i];
+                if (callVal !== null && callVal !== undefined) {
+                    totalCalls += callVal;
+                }
+            }
+        }
+
+        return { totalTokens, totalCalls, xTime: todayXTime, yValue: todayYValue, modelCallCount: todayModelCallCount };
+    }
+
+    private getPeakToken(trend: TrendSlice): { tokens: number; time: string } | null {
         if (!trend.xTime || !trend.yValue || trend.yValue.length === 0) {
             return null;
         }
@@ -356,7 +406,7 @@ export class StatusBarManager implements vscode.Disposable {
         return peakTokens > 0 ? { tokens: peakTokens, time: peakTime } : null;
     }
 
-    private getPeakCalls(trend: TrendData): { calls: number; time: string } | null {
+    private getPeakCalls(trend: TrendSlice): { calls: number; time: string } | null {
         if (!trend.xTime || !trend.modelCallCount || trend.modelCallCount.length === 0) {
             return null;
         }
@@ -386,7 +436,7 @@ export class StatusBarManager implements vscode.Disposable {
         return `[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percentage.toFixed(1)}%`;
     }
 
-    private buildSparkline(trend: TrendData): string {
+    private buildSparkline(trend: TrendSlice): string {
         if (!trend.yValue || trend.yValue.length === 0) {
             return '';
         }
