@@ -147,6 +147,12 @@ effectiveElapsed = elapsed × activeRate
 
 ### 更新日志
 
+#### 1.5.0
+- **闲置检测**：增加用户 AFK（离开键盘）检测功能，闲置期间暂停自动轮询刷新
+  - 可配置闲置检测阈值（秒）
+  - 闲置期间状态栏显示 `GLM: AFK`
+  - 恢复活跃状态后自动刷新数据
+
 #### 1.4.3
 - **数据量优化**：数据量较少时禁用预估功能
   - 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
@@ -324,6 +330,12 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.5.0
+- **AFK Detection**: Added user AFK (Away From Keyboard) detection, auto-refresh polling is paused during AFK
+  - Configurable AFK detection threshold (seconds)
+  - Status bar displays `GLM: AFK` during AFK
+  - Auto-refresh data when returning to active state
 
 #### 1.4.3
 - **Data Volume Optimization**: Disabled projection for insufficient data
