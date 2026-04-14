@@ -120,10 +120,6 @@ effectiveElapsed = elapsed × activeRate
 
 > **⚡ 安全性说明**：此命令使用 VS Code SecretStorage API，API Key 将通过操作系统密钥管理器加密存储，绝不会写入任何配置文件或 Git 仓库。
 
-**环境变量方式**
-
-你也可以通过环境变量 `GLM_API_KEY` 配置，这种方式在多个 VS Code 实例间共享，无需重复设置。
-
 **自动迁移**
 
 如果你之前在 `settings.json` 中配置过 API Key，升级到新版本后首次启动时，扩展会自动将 token 迁移到安全存储，并清空配置文件中的明文。
@@ -150,6 +146,18 @@ effectiveElapsed = elapsed × activeRate
 扩展会在启动时自动查询并定时刷新。
 
 ### 更新日志
+
+#### 1.4.3
+- **数据量优化**：数据量较少时禁用预估功能
+  - 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
+  - 周配额：距离下次刷新时间大于6.5天时不进行预估
+- **术语优化**：将"Token"改为"词元"，提升中文表达习惯
+  - 今日 Token → 今日词元
+  - 峰值 Token → 峰值词元
+- **配置简化**：移除环境变量配置方式，统一使用设置界面和命令行配置
+  - 不再支持 `GLM_API_KEY` 环境变量配置
+  - 不再支持 `GLM_BASE_URL` 环境变量配置
+  - 简化配置流程，提高安全性
 
 #### 1.4.2
 - **Bug 修复**：修复今日统计和今日趋势取值错误
@@ -290,10 +298,6 @@ Use the command to set your API Key (encrypted storage, never written to files):
 
 > **⚡ Security Note**: This command uses VS Code SecretStorage API. Your API Key will be encrypted by the OS keychain manager and never written to any config file or Git repository.
 
-**Environment Variable**
-
-You can also configure via the `GLM_API_KEY` environment variable. This shares the key across multiple VS Code instances.
-
 **Automatic Migration**
 
 If you previously configured the API Key in `settings.json`, the extension will automatically migrate it to secure storage on first startup after updating, clearing the plaintext from your config file.
@@ -320,6 +324,18 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.4.3
+- **Data Volume Optimization**: Disabled projection for insufficient data
+  - 5-hour quota: No projection when >4.5 hours to next reset
+  - Weekly quota: No projection when >6.5 days to next reset
+- **Configuration Simplification**: Removed environment variable configuration, unified settings interface and command-line configuration
+  - No longer supports `GLM_API_KEY` environment variable configuration
+  - No longer supports `GLM_BASE_URL` environment variable configuration
+  - Simplified configuration process, enhanced security
+
+#### 1.4.2
+- **Bug Fix**: Fixed today statistics and trend calculation errors
 
 #### 1.4.1
 - Fixed typos

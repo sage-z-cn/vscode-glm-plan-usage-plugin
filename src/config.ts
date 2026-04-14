@@ -15,14 +15,14 @@ export class ConfigManager {
             const stored = await this.secrets.get(this.SECRET_KEY);
             if (stored) { return stored; }
         }
-        // fallback 到环境变量
-        return process.env.GLM_API_KEY || '';
+        // 不再支持环境变量配置，请使用设置界面或命令行配置
+        return '';
     }
 
     static getBaseUrl(): string {
         const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
         const url = config.get<string>('baseUrl') || '';
-        return url || process.env.GLM_BASE_URL || '';
+        return url || '';
     }
 
     static getAutoRefresh(): boolean {
@@ -63,14 +63,14 @@ export class ConfigManager {
         if (!authToken) {
             return {
                 valid: false,
-                error: vscode.l10n.t('API Key is not configured. Please use "GLM Plan Usage: Set API Key" command or set GLM_API_KEY environment variable.')
+                error: vscode.l10n.t('API Key is not configured. Please use "GLM Plan Usage: Set API Key" command.')
             };
         }
 
         if (!baseUrl) {
             return {
                 valid: false,
-                error: vscode.l10n.t('Base URL is not configured. Please set glmPlanUsage.baseUrl in settings or GLM_BASE_URL environment variable.')
+                error: vscode.l10n.t('Base URL is not configured. Please set glmPlanUsage.baseUrl in settings.')
             };
         }
 

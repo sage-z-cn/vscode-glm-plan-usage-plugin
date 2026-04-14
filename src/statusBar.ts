@@ -116,6 +116,9 @@ function formatDuration(ms: number): string {
 /**
  * 计算预估是否会超出限额，统一按时间速率线性预估
  * 周配额支持基于活跃天数修正，剔除未使用的日期
+ * 数据量较少时不进行预估：
+ * - 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
+ * - 周配额：距离下次刷新时间大于6.5天时不进行预估
  */
 function calculateUsageEstimate(
     percentage: number,
@@ -133,6 +136,19 @@ function calculateUsageEstimate(
 
     if (elapsed <= 0) {
         return null;
+    }
+
+    // 数据量较少时不进行预估
+    if (quotaType === QUOTA_TYPE_5H) {
+        // 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
+        if (elapsed > 4.5 * 60 * 60 * 1000) {
+            return null;
+        }
+    } else if (quotaType === QUOTA_TYPE_WEEKLY) {
+        // 周配额：距离下次刷新时间大于6.5天时不进行预估
+        if (elapsed > 6.5 * 24 * 60 * 60 * 1000) {
+            return null;
+        }
     }
 
     // 周配额：基于活跃天数修正 elapsed，剔除未使用的日期
