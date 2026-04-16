@@ -49,8 +49,6 @@ GLM Plan Usage
 周配额:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
 下次刷新: 2天 22小时 (2026-04-16 17:02:32)
-预计完: 5天 21时
-预估用量: 58.5%
 
 今日统计:
 • 今日 Token: 16.50M
@@ -80,16 +78,6 @@ GLM Plan Usage
 elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 预估用量 = (当前占比 / elapsed) × 周期总时长
 ```
-
-**周配额**：在线性预估基础上，基于活跃天数修正，剔除未使用的日期（如休息日、请假等）
-
-```
-activeRate = 有使用的天数 / 趋势窗口总天数
-effectiveElapsed = elapsed × activeRate
-预估用量 = (当前占比 / effectiveElapsed) × 周期总时长
-```
-
-当所有天数都有使用时 `activeRate = 1`，退化为标准线性预估。
 
 ### 配置
 
@@ -233,8 +221,6 @@ Est. Usage: 39.8%
 Weekly Quota:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
 Next Reset: 2d 22h (2026-04-16 17:02:32)
-Est. Exhaust: 5d 21h
-Est. Usage: 58.5%
 
 Today Statistics:
 • Today Tokens: 16.50M
@@ -264,16 +250,6 @@ Quota estimation uses a linear rate projection, calculating the expected usage f
 elapsed = totalDuration - (nextResetTime - now)
 projected = (currentPercentage / elapsed) × totalDuration
 ```
-
-**Weekly Quota**: Linear projection adjusted by active days, excluding unused days (e.g., rest days, leave, etc.)
-
-```
-activeRate = daysWithUsage / totalDaysInWindow
-effectiveElapsed = elapsed × activeRate
-projected = (currentPercentage / effectiveElapsed) × totalDuration
-```
-
-When all days have usage, `activeRate = 1`, falling back to standard linear projection.
 
 ### Configuration
 

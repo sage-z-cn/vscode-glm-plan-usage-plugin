@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } from './types';
+import { UsageResponse, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } from './types';
 
 /** 趋势数据的通用切片，用于 getPeakToken / getPeakCalls / buildSparkline */
 interface TrendSlice {
@@ -12,14 +12,13 @@ interface ColorParams {
     fiveHourPct?: number;
     weeklyPct?: number;
     fiveHourWillExceed?: boolean;
-    weeklyWillExceed?: boolean;
 }
 
 function getCombinedColor(params: ColorParams): string {
-    const { fiveHourPct = 0, weeklyPct = 0, fiveHourWillExceed = false, weeklyWillExceed = false } = params;
+    const { fiveHourPct = 0, weeklyPct = 0, fiveHourWillExceed = false } = params;
 
     const maxPct = Math.max(fiveHourPct, weeklyPct);
-    const willExceed = fiveHourWillExceed || weeklyWillExceed;
+    const willExceed = fiveHourWillExceed;
 
     // 额度剩余不足10%（即使用超过90%）时显示红色
     if (maxPct >= 90) {
@@ -129,55 +128,30 @@ function formatDuration(ms: number): string {
 
 /**
  * 计算预估是否会超出限额，统一按时间速率线性预估
- * 周配额支持基于活跃天数修正，剔除未使用的日期
- * 数据量较少时不进行预估：
- * - 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
- * - 周配额：距离下次刷新时间大于6.5天时不进行预估
+ * 数据量较少时不进行预估：距离下次刷新时间大于4.5小时时不进行预估
  */
 function calculateUsageEstimate(
     percentage: number,
-    nextResetTime: number | undefined,
-    quotaType: string,
-    activeDaysInfo?: ActiveDaysInfo | null
+    nextResetTime: number | undefined
 ): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
     if (!nextResetTime || percentage <= 0) {
         return null;
     }
 
     const now = new Date().getTime();
-    const totalDuration = quotaType === QUOTA_TYPE_5H ? 5 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
+    const totalDuration = 5 * 60 * 60 * 1000;
     const elapsed = totalDuration - (nextResetTime - now);
 
     if (elapsed <= 0) {
         return null;
     }
 
-    // 数据量较少时不进行预估
-    if (quotaType === QUOTA_TYPE_5H) {
-        // 5小时配额：距离下次刷新时间大于4.5小时时不进行预估
-        if (elapsed > 4.5 * 60 * 60 * 1000) {
-            return null;
-        }
-    } else if (quotaType === QUOTA_TYPE_WEEKLY) {
-        // 周配额：距离下次刷新时间大于6.5天时不进行预估
-        if (elapsed > 6.5 * 24 * 60 * 60 * 1000) {
-            return null;
-        }
+    if (elapsed > 4.5 * 60 * 60 * 1000) {
+        return null;
     }
 
-    // 周配额：基于活跃天数修正 elapsed，剔除未使用的日期
-    let effectiveElapsed = elapsed;
-    if (quotaType === QUOTA_TYPE_WEEKLY && activeDaysInfo && activeDaysInfo.totalDaysInWindow > 0) {
-        const { activeDays, totalDaysInWindow } = activeDaysInfo;
-        if (activeDays > 0 && activeDays < totalDaysInWindow) {
-            const activeRate = activeDays / totalDaysInWindow;
-            effectiveElapsed = elapsed * activeRate;
-        }
-    }
+    const projectedPercentage = (percentage / elapsed) * totalDuration;
 
-    const projectedPercentage = (percentage / effectiveElapsed) * totalDuration;
-
-    // 预估用完 100% 所需的实际 elapsed 时间，再减去已过的实际时间得到从 now 起的剩余时间
     const msToExhaust = projectedPercentage > 0
         ? totalDuration * 100 / projectedPercentage - elapsed
         : 0;
@@ -281,19 +255,14 @@ export class StatusBarManager implements vscode.Disposable {
             this.statusItem.text = 'GLM: N/A';
         }
 
-        // 计算预估是否会超出限额
         const fiveHourEstimate = fiveHourLimit
-            ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)
-            : null;
-        const weeklyEstimate = weeklyLimit
-            ? calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, response.activeDaysInfo)
+            ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime)
             : null;
 
         this.statusItem.color = getCombinedColor({
             fiveHourPct,
             weeklyPct,
-            fiveHourWillExceed: fiveHourEstimate?.willExceed ?? false,
-            weeklyWillExceed: weeklyEstimate?.willExceed ?? false
+            fiveHourWillExceed: fiveHourEstimate?.willExceed ?? false
         });
         this.buildTooltip(response);
         this.show();
@@ -325,7 +294,7 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
             // 添加5小时配额使用预估
-            const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime, QUOTA_TYPE_5H);
+            const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime);
             if (estimate) {
                 // 显示预估限额用完时间
                 if (estimate.timeToExhaust) {
@@ -350,24 +319,6 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
             md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
-
-            // 添加周配额使用预估
-            const estimate = calculateUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY, response.activeDaysInfo);
-            if (estimate) {
-                if (estimate.timeToExhaust) {
-                    if (estimate.projectedPercentage <= 100) {
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
-                    } else {
-                        const exhaustDate = estimate.estimatedExhaustTime
-                            ? formatDateTimeOnly(estimate.estimatedExhaustTime)
-                            : '';
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})\n\n`);
-                    }
-                }
-                const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
-                const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
-            }
         }
 
         if (!fiveHourLimit && !weeklyLimit) {
