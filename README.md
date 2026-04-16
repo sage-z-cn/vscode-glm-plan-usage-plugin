@@ -135,6 +135,9 @@ elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 
 ### 更新日志
 
+#### 1.5.2
+- **移除周配额预估**：移除周配额预估功能
+
 #### 1.5.0
 - **闲置检测**：增加用户 AFK（离开键盘）检测功能，闲置期间暂停自动轮询刷新
   - 可配置闲置检测阈值（秒）
@@ -306,6 +309,9 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.5.2
+- **Remove Weekly Quota Projection**: Removed weekly quota projection feature
 
 #### 1.5.1
 - **Algorithm Fix**: Fixed estimated time to exhaust algorithm
