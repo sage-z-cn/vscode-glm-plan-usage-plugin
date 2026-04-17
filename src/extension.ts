@@ -107,7 +107,7 @@ export async function activate(context: vscode.ExtensionContext) {
         'glmPlanUsage.query',
         async () => {
             if (!(await ConfigManager.hasValidConfig())) {
-                vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
+                vscode.commands.executeCommand('glmPlanUsage.setToken');
                 return;
             }
             // 手动点击时跳过缓存，强制请求最新数据

@@ -45,5 +45,7 @@
   "d": "天",
   "h": "小时",
   "m": "分钟",
-  "s": "秒"
+  "s": "秒",
+  "Settings": "设置",
+  "Configure API Key": "配置 API Key"
 }

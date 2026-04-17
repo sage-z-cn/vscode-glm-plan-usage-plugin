@@ -278,6 +278,7 @@ export class StatusBarManager implements vscode.Disposable {
 
         const md = new vscode.MarkdownString(undefined, true);
         md.isTrusted = true;
+        md.supportHtml = true;
 
         md.appendMarkdown(`### GLM Plan Usage\n\n`);
 
@@ -348,7 +349,10 @@ export class StatusBarManager implements vscode.Disposable {
 
             const sparkline = this.buildSparkline(todayData);
             if (sparkline) {
-                md.appendMarkdown(`**${vscode.l10n.t('Today Trend')}:**\n\n`);
+                const startTime = this.formatSparklineTime(todayData.xTime[0]);
+                const lastIdx = todayData.xTime.length - 1;
+                const endTime = this.formatSparklineTime(todayData.xTime[lastIdx], true);
+                md.appendMarkdown(`**${vscode.l10n.t('Today Trend')} (${startTime}~${endTime}):**\n\n`);
                 md.appendMarkdown('```\n');
                 md.appendMarkdown(sparkline);
                 md.appendMarkdown('\n```\n');
@@ -356,7 +360,9 @@ export class StatusBarManager implements vscode.Disposable {
         }
 
         md.appendMarkdown(`\n---\n\n`);
-        md.appendMarkdown(`*${vscode.l10n.t('Click to refresh')}*\n`);
+        md.appendMarkdown(`[$(gear) ${vscode.l10n.t('Settings')}](command:workbench.action.openSettings?%22glmPlanUsage%22 "${vscode.l10n.t('Settings')}")`);
+        md.appendMarkdown('\u00a0|\u00a0');
+        md.appendMarkdown(`[$(key) ${vscode.l10n.t('Configure API Key')}](command:glmPlanUsage.setToken "${vscode.l10n.t('Configure API Key')}")`);
 
         this.statusItem.tooltip = md;
     }
@@ -503,35 +509,27 @@ export class StatusBarManager implements vscode.Disposable {
             return bars;
         }
 
-        const labels = this.getTimeLabels(displayTimes, displayValues.length);
-
-        return `${bars}\n${labels}`;
+        return bars;
     }
 
-    private getTimeLabels(xTime: string[], count: number): string {
-        if (xTime.length === 0) {
-            return '';
-        }
+    private formatSparklineTime(t: string, isEnd = false): string {
+        const parts = t.split(' ');
+        if (parts.length >= 2) {
+            const timeParts = parts[1].split(':');
+            const hour = parseInt(timeParts[0], 10);
+            const minute = parseInt(timeParts[1], 10);
+            const formatted = `${hour}:${String(minute).padStart(2, '0')}`;
 
-        const recent = xTime.slice(-count);
-        const first = recent[0];
-        const last = recent[recent.length - 1];
-
-        const formatTime = (t: string): string => {
-            const parts = t.split(' ');
-            if (parts.length >= 2) {
-                const hour = parseInt(parts[1].split(':')[0], 10);
-                return hour + 'h';
+            if (isEnd) {
+                const now = new Date();
+                if (now.getHours() === hour) {
+                    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                }
             }
-            return t;
-        };
 
-        const start = formatTime(first);
-        const end = formatTime(last);
-
-        const spaceWidth = Math.max(0, count - start.length - end.length);
-
-        return `${start}${' '.repeat(spaceWidth)}${end}`;
+            return formatted;
+        }
+        return t;
     }
 
     setError(message: string): void {

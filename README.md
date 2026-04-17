@@ -56,9 +56,11 @@ GLM Plan Usage
 • 峰值 Token: 5.89M (09:00)
 • 峰值调用: 145 (09:00)
 
-今日趋势:
+今日趋势 (0:00~18:54):
 ███    ██ ██
-8h     18h
+
+---
+⚙ 设置 | 🔑 配置 API Key
 ```
 
 悬停提示包含：
@@ -66,7 +68,8 @@ GLM Plan Usage
 - 5 小时配额进度条及下次刷新时间（倒计时格式）
 - 周配额进度条及下次刷新时间（倒计时格式）
 - 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
-- 今日趋势：Unicode 柱状图展示每小时使用情况
+- 今日趋势：Unicode 柱状图展示每小时使用情况，标题显示时间范围
+- 底部快捷链接：设置、配置 API Key
 
 ### 预估算法
 
@@ -134,6 +137,11 @@ elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 扩展会在启动时自动查询并定时刷新。
 
 ### 更新日志
+
+#### 1.5.3
+- **Tooltip 优化**：底部新增设置和配置 API Key 快捷链接
+- **趋势图优化**：时间范围移至趋势图标题中显示
+- **交互优化**：未配置 API Key 时点击状态栏直接弹出输入框
 
 #### 1.5.2
 - **移除周配额预估**：移除周配额预估功能
@@ -231,9 +239,11 @@ Today Statistics:
 • Peak Token: 5.89M (09:00)
 • Peak Calls: 145 (09:00)
 
-Today Trend:
+Today Trend (0:00~18:54):
 ███    ██ ██
-8h     18h
+
+---
+⚙ Settings | 🔑 Configure API Key
 ```
 
 The tooltip includes:
@@ -241,7 +251,8 @@ The tooltip includes:
 - 5-hour quota progress bar with next reset time (countdown format)
 - Weekly quota progress bar with next reset time (countdown format)
 - Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
-- Today Trend: Unicode bar chart showing hourly usage
+- Today Trend: Unicode bar chart showing hourly usage, with time range in title
+- Bottom quick links: Settings, Configure API Key
 
 ### Estimation Algorithm
 
@@ -309,6 +320,11 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.5.3
+- **Tooltip Enhancement**: Added Settings and Configure API Key quick links at the bottom
+- **Trend Chart**: Time range now displayed in the trend chart title
+- **Interaction**: Clicking status bar with unconfigured API Key now opens the input box directly
 
 #### 1.5.2
 - **Remove Weekly Quota Projection**: Removed weekly quota projection feature
