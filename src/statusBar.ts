@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } from './types';
+import { UsageResponse, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState, WEEKLY_QUOTA } from './types';
 
 /** 趋势数据的通用切片，用于 getPeakToken / getPeakCalls / buildSparkline */
 interface TrendSlice {
@@ -280,7 +280,18 @@ export class StatusBarManager implements vscode.Disposable {
         md.isTrusted = true;
         md.supportHtml = true;
 
-        md.appendMarkdown(`### GLM Plan Usage\n\n`);
+        // 构建带套餐级别的标题
+        const level = response.level;
+        let titleKey: string;
+        
+        if (level) {
+            const levelText = level.charAt(0).toUpperCase() + level.slice(1);
+            titleKey = `[${levelText}] GLM Coding Plan Usage`;
+        } else {
+            titleKey = 'GLM Coding Plan Usage';
+        }
+        
+        md.appendMarkdown(`### ${vscode.l10n.t(titleKey)}\n\n`);
 
         const now = new Date();
         md.appendMarkdown(`**${vscode.l10n.t('Updated')}:** ${now.toLocaleString()}\n\n`);
@@ -359,6 +370,29 @@ export class StatusBarManager implements vscode.Disposable {
             }
         }
 
+        // Daily Usage：过去7天每日 Token 用量
+        if (response.trend) {
+            const dailyData = this.aggregateDailyData(response.trend);
+            if (dailyData.length > 0) {
+                md.appendMarkdown(`---\n\n`);
+                md.appendMarkdown(`**${vscode.l10n.t('Daily Usage')}:**\n\n`);
+
+                const weeklyQuota = response.level ? WEEKLY_QUOTA[response.level.toLowerCase()] : undefined;
+
+                for (const day of dailyData) {
+                    if (day.tokens === 0) {
+                        md.appendMarkdown(`${day.date}: ${vscode.l10n.t('None')}\n\n`);
+                    } else if (weeklyQuota) {
+                        const pct = (day.tokens / weeklyQuota * 100).toFixed(1);
+                        md.appendMarkdown(`${day.date}: ${formatTokens(day.tokens)} (${pct}%)\n\n`);
+                    } else {
+                        md.appendMarkdown(`${day.date}: ${formatTokens(day.tokens)}\n\n`);
+                    }
+                }
+                md.appendMarkdown('\n');
+            }
+        }
+
         md.appendMarkdown(`\n---\n\n`);
         md.appendMarkdown(`[$(gear) ${vscode.l10n.t('Settings')}](command:workbench.action.openSettings?%22glmPlanUsage%22 "${vscode.l10n.t('Settings')}")`);
         md.appendMarkdown('\u00a0|\u00a0');
@@ -405,6 +439,30 @@ export class StatusBarManager implements vscode.Disposable {
         }
 
         return { totalTokens, totalCalls, xTime: todayXTime, yValue: todayYValue, modelCallCount: todayModelCallCount };
+    }
+
+    private aggregateDailyData(trend: TrendData): { date: string; tokens: number }[] {
+        const dayMap = new Map<string, number>();
+
+        for (let i = 0; i < trend.xTime.length; i++) {
+            const timeStr = trend.xTime[i];
+            const dateKey = timeStr.split(' ')[0];
+            const val = trend.yValue[i];
+            if (val !== null && val !== undefined) {
+                dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + val);
+            }
+        }
+
+        const sorted = Array.from(dayMap.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([date, tokens]) => {
+                const parts = date.split('-');
+                const mm = parts[1];
+                const dd = parts[2];
+                return { date: `${mm}-${dd}`, tokens };
+            });
+
+        return sorted;
     }
 
     private getPeakToken(trend: TrendSlice): { tokens: number; time: string } | null {

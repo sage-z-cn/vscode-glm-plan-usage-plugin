@@ -217,16 +217,26 @@ export class UsageQueryService {
         const { startTime, endTime } = this.getTimeWindow();
         const queryParams = `?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
 
-        const [modelUsageRaw, toolUsageRaw, quotaLimits] = await Promise.all([
+        const [modelUsageRaw, toolUsageRaw, quotaLimitResponse] = await Promise.all([
             this.httpsGet<any>(modelUsageUrl, authToken, queryParams),
             this.httpsGet<any>(toolUsageUrl, authToken, queryParams),
-            this.httpsGet<any>(quotaLimitUrl, authToken, undefined, (data) => this.processQuotaLimit(data))
+            this.httpsGet<any>(quotaLimitUrl, authToken, undefined, (data) => {
+                // 在处理配额限制的同时保留原始响应中的 level 字段
+                const processedQuotaLimits = this.processQuotaLimit(data);
+                return {
+                    limits: data?.data?.limits || data?.limits || [],
+                    level: data?.data?.level || data?.level,
+                    processedQuotaLimits
+                };
+            })
         ]);
 
         const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw?.modelUsage || modelUsageRaw);
         const toolUsage = this.ensureArray<ToolUsageData>(toolUsageRaw);
         const trend = this.processTrendData(modelUsageRaw);
         const activeDaysInfo = this.parseActiveDaysInfo(modelUsageRaw);
+        const quotaLimits = quotaLimitResponse.processedQuotaLimits;
+        const level = quotaLimitResponse.level;
 
         return {
             platform,
@@ -234,7 +244,8 @@ export class UsageQueryService {
             toolUsage,
             quotaLimits,
             trend,
-            activeDaysInfo
+            activeDaysInfo,
+            level
         };
     }
 }

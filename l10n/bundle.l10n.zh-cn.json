@@ -47,5 +47,11 @@
   "m": "分钟",
   "s": "秒",
   "Settings": "设置",
-  "Configure API Key": "配置 API Key"
+  "Configure API Key": "配置 API Key",
+  "[Lite] GLM Coding Plan Usage": "[Lite] GLM Coding Plan 用量",
+  "[Pro] GLM Coding Plan Usage": "[Pro] GLM Coding Plan 用量",
+  "[Max] GLM Coding Plan Usage": "[Max] GLM Coding Plan 用量",
+  "GLM Coding Plan Usage": "GLM Coding Plan 用量",
+  "Daily Usage": "每日用量",
+  "None": "无"
 }

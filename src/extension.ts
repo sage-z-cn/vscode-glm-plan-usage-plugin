@@ -143,7 +143,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (await ConfigManager.hasValidConfig()) {
         if (ConfigManager.getAutoRefresh()) {
-            await queryUsage();
+            await queryUsage(true);
             setupAutoRefresh();
         } else {
             statusBarManager.show();

@@ -12,7 +12,7 @@
   - 🔴 红色：配额使用 ≥ 90%（剩余不足 10%）
   - 🟡 黄色：预估会在刷新前超出限额
   - 🟢 绿色：正常使用
-- **富文本提示**：鼠标悬停显示详细配额信息和今日使用趋势图
+- **富文本提示**：鼠标悬停显示详细配额信息、套餐级别、每日用量和今日使用趋势图
 - **今日统计**：显示今日 Token 用量、调用次数、峰值数据
 - **趋势图表**：Unicode 柱状图展示今日每小时使用趋势
 - **配额预警**：使用率达到 90% 时自动弹出警告通知
@@ -37,7 +37,7 @@ GLM: 20% | 21%
 #### 悬停显示
 
 ```
-GLM Plan Usage
+[Pro] GLM Coding Plan 用量
 更新时间: 2026/4/13 18:38:47
 
 5小时配额:
@@ -59,16 +59,23 @@ GLM Plan Usage
 今日趋势 (0:00~18:54):
 ███    ██ ██
 
+每日用量:
+04-11: 8.32M (3.2%)
+04-12: 12.50M (4.8%)
+04-13: 16.50M (6.3%)
+
 ---
 ⚙ 设置 | 🔑 配置 API Key
 ```
 
 悬停提示包含：
+- 套餐级别标识（Lite/Pro/Max）
 - 更新时间
 - 5 小时配额进度条及下次刷新时间（倒计时格式）
 - 周配额进度条及下次刷新时间（倒计时格式）
 - 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
 - 今日趋势：Unicode 柱状图展示每小时使用情况，标题显示时间范围
+- 每日用量：过去 7 天每日 Token 用量及占周配额百分比
 - 底部快捷链接：设置、配置 API Key
 
 ### 预估算法
@@ -138,6 +145,9 @@ elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 
 ### 更新日志
 
+#### 1.6.0
+- **显示套餐级别与每日用量**：Tooltip 标题显示当前套餐级别（Lite/Pro/Max），新增过去 7 天每日 Token 用量统计
+
 #### 1.5.3
 - **Tooltip 优化**：底部新增设置和配置 API Key 快捷链接
 - **趋势图优化**：时间范围移至趋势图标题中显示
@@ -195,7 +205,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
   - 🟢 Green: < 70%
   - 🟡 Yellow: 70% ~ 89%
   - 🔴 Red: ≥ 90%
-- **Rich Tooltip**: Hover to view detailed quota information and today's usage trend chart
+- **Rich Tooltip**: Hover to view detailed quota information, plan level, daily usage and today's usage trend chart
 - **Today Statistics**: Display today's token usage, call count, and peak data
 - **Trend Chart**: Unicode bar chart showing hourly usage trend for today
 - **Quota Warning**: Automatic warning notification when usage reaches 90%
@@ -220,7 +230,7 @@ GLM: 20% | 21%
 #### Tooltip
 
 ```
-GLM Plan Usage
+[Pro] GLM Coding Plan Usage
 Updated: 2026/4/13 18:38:47
 
 5h Quota:
@@ -242,16 +252,23 @@ Today Statistics:
 Today Trend (0:00~18:54):
 ███    ██ ██
 
+Daily Usage:
+04-11: 8.32M (3.2%)
+04-12: 12.50M (4.8%)
+04-13: 16.50M (6.3%)
+
 ---
 ⚙ Settings | 🔑 Configure API Key
 ```
 
 The tooltip includes:
+- Plan level badge (Lite/Pro/Max)
 - Updated time
 - 5-hour quota progress bar with next reset time (countdown format)
 - Weekly quota progress bar with next reset time (countdown format)
 - Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
 - Today Trend: Unicode bar chart showing hourly usage, with time range in title
+- Daily Usage: Daily token usage for the past 7 days with weekly quota percentage
 - Bottom quick links: Settings, Configure API Key
 
 ### Estimation Algorithm
@@ -320,6 +337,9 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.6.0
+- **Plan Level & Daily Usage**: Tooltip title now shows current plan level (Lite/Pro/Max), added daily token usage for the past 7 days
 
 #### 1.5.3
 - **Tooltip Enhancement**: Added Settings and Configure API Key quick links at the bottom
