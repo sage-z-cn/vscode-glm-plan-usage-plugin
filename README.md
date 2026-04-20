@@ -12,8 +12,8 @@
   - 🔴 红色：配额使用 ≥ 90%（剩余不足 10%）
   - 🟡 黄色：预估会在刷新前超出限额
   - 🟢 绿色：正常使用
-- **富文本提示**：鼠标悬停显示详细配额信息、套餐级别、每日用量和今日使用趋势图
-- **今日统计**：显示今日 Token 用量、调用次数、峰值数据
+- **富文本提示**：鼠标悬停显示详细配额信息、套餐级别、七天用量和今日使用趋势图
+- **今日用量**：显示今日 Token 用量、调用次数、峰值数据
 - **趋势图表**：Unicode 柱状图展示今日每小时使用趋势
 - **配额预警**：使用率达到 90% 时自动弹出警告通知
 - **自动刷新**：可配置定时自动刷新配额数据
@@ -48,9 +48,9 @@ GLM: 20% | 21%
 
 周配额:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
-下次刷新: 2天 22小时 (2026-04-16 17:02:32)
+下次刷新: 2天 22小时 (04-16 星期四 17:02)
 
-今日统计:
+今日用量:
 • 今日 Token: 16.50M
 • 今日调用: 500
 • 峰值 Token: 5.89M (09:00)
@@ -59,10 +59,10 @@ GLM: 20% | 21%
 今日趋势 (0:00~18:54):
 ███    ██ ██
 
-每日用量:
-04-11: 8.32M (3.2%)
-04-12: 12.50M (4.8%)
-04-13: 16.50M (6.3%)
+七天用量:
+04-11 星期五: 8.32M (3.2%)
+04-12 星期六: 12.50M (4.8%)
+04-13 星期日: 16.50M (6.3%)
 
 ---
 ⚙ 设置 | 🔑 配置 API Key
@@ -73,9 +73,9 @@ GLM: 20% | 21%
 - 更新时间
 - 5 小时配额进度条及下次刷新时间（倒计时格式）
 - 周配额进度条及下次刷新时间（倒计时格式）
-- 今日统计：今日 Token、今日调用、峰值 Token、峰值调用
+- 今日用量：今日 Token、今日调用、峰值 Token、峰值调用
 - 今日趋势：Unicode 柱状图展示每小时使用情况，标题显示时间范围
-- 每日用量：过去 7 天每日 Token 用量及占周配额百分比
+- 七天用量：过去 7 天每日 Token 用量及占周配额百分比
 - 底部快捷链接：设置、配置 API Key
 
 ### 预估算法
@@ -205,8 +205,8 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
   - 🟢 Green: < 70%
   - 🟡 Yellow: 70% ~ 89%
   - 🔴 Red: ≥ 90%
-- **Rich Tooltip**: Hover to view detailed quota information, plan level, daily usage and today's usage trend chart
-- **Today Statistics**: Display today's token usage, call count, and peak data
+- **Rich Tooltip**: Hover to view detailed quota information, plan level, 7-day usage and today's usage trend chart
+- **Today Usage**: Display today's token usage, call count, and peak data
 - **Trend Chart**: Unicode bar chart showing hourly usage trend for today
 - **Quota Warning**: Automatic warning notification when usage reaches 90%
 - **Auto Refresh**: Configurable automatic quota data refresh
@@ -241,9 +241,9 @@ Est. Usage: 39.8%
 
 Weekly Quota:
 ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
-Next Reset: 2d 22h (2026-04-16 17:02:32)
+Next Reset: 2d 22h (04-16 Thu 17:02)
 
-Today Statistics:
+Today Usage:
 • Today Tokens: 16.50M
 • Today Calls: 500
 • Peak Token: 5.89M (09:00)
@@ -252,10 +252,10 @@ Today Statistics:
 Today Trend (0:00~18:54):
 ███    ██ ██
 
-Daily Usage:
-04-11: 8.32M (3.2%)
-04-12: 12.50M (4.8%)
-04-13: 16.50M (6.3%)
+7-Day Usage:
+04-11 Fri: 8.32M (3.2%)
+04-12 Sat: 12.50M (4.8%)
+04-13 Sun: 16.50M (6.3%)
 
 ---
 ⚙ Settings | 🔑 Configure API Key
@@ -266,9 +266,9 @@ The tooltip includes:
 - Updated time
 - 5-hour quota progress bar with next reset time (countdown format)
 - Weekly quota progress bar with next reset time (countdown format)
-- Today Statistics: Today Tokens, Today Calls, Peak Token, Peak Calls
+- Today Usage: Today Tokens, Today Calls, Peak Token, Peak Calls
 - Today Trend: Unicode bar chart showing hourly usage, with time range in title
-- Daily Usage: Daily token usage for the past 7 days with weekly quota percentage
+- 7-Day Usage: Daily token usage for the past 7 days with weekly quota percentage
 - Bottom quick links: Settings, Configure API Key
 
 ### Estimation Algorithm
@@ -338,8 +338,11 @@ The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
 
+#### 1.6.1
+- **Display**: Add weekday to time display, rename section titles
+
 #### 1.6.0
-- **Plan Level & Daily Usage**: Tooltip title now shows current plan level (Lite/Pro/Max), added daily token usage for the past 7 days
+- **Plan Level & 7-Day Usage**: Tooltip title now shows current plan level (Lite/Pro/Max), added daily token usage for the past 7 days
 
 #### 1.5.3
 - **Tooltip Enhancement**: Added Settings and Configure API Key quick links at the bottom

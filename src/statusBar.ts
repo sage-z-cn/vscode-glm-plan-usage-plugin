@@ -33,6 +33,14 @@ function getCombinedColor(params: ColorParams): string {
     return '#89D185';
 }
 
+const WEEKDAY_NAMES = [
+    'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'
+];
+
+function getWeekdayName(date: Date): string {
+    return vscode.l10n.t(WEEKDAY_NAMES[date.getDay()]);
+}
+
 /** 仅格式化日期时间，不带倒计时前缀，用于预估用尽时间的日期展示 */
 function formatDateTimeOnly(ts: number): string {
     const d = new Date(ts);
@@ -44,7 +52,7 @@ function formatDateTimeOnly(ts: number): string {
     if (isToday) {
         return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
-    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${getWeekdayName(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function formatResetTime(ts: number | undefined, quotaType?: string): string {
@@ -97,7 +105,7 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
         return `${countdown} (${timeStr})`;
     }
 
-    const fullStr = `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const fullStr = `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${getWeekdayName(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     return `${countdown} (${fullStr})`;
 }
 
@@ -342,7 +350,7 @@ export class StatusBarManager implements vscode.Disposable {
             const todayData = this.filterTodayData(response.trend);
 
             md.appendMarkdown(`---\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Today Statistics')}:**\n\n`);
+            md.appendMarkdown(`**${vscode.l10n.t('Today Usage')}:**\n\n`);
 
             md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n`);
             md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n`);
@@ -370,12 +378,12 @@ export class StatusBarManager implements vscode.Disposable {
             }
         }
 
-        // Daily Usage：过去7天每日 Token 用量
+        // 7-Day Usage：过去7天每日 Token 用量
         if (response.trend) {
             const dailyData = this.aggregateDailyData(response.trend);
             if (dailyData.length > 0) {
                 md.appendMarkdown(`---\n\n`);
-                md.appendMarkdown(`**${vscode.l10n.t('Daily Usage')}:**\n\n`);
+                md.appendMarkdown(`**${vscode.l10n.t('7-Day Usage')}:**\n\n`);
 
                 const weeklyQuota = response.level ? WEEKLY_QUOTA[response.level.toLowerCase()] : undefined;
 
@@ -459,7 +467,10 @@ export class StatusBarManager implements vscode.Disposable {
                 const parts = date.split('-');
                 const mm = parts[1];
                 const dd = parts[2];
-                return { date: `${mm}-${dd}`, tokens };
+                // 解析日期获取星期几
+                const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                const weekday = getWeekdayName(d);
+                return { date: `${mm}-${dd} ${weekday}`, tokens };
             });
 
         return sorted;
