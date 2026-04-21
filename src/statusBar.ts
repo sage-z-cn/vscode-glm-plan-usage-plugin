@@ -158,6 +158,11 @@ function calculateUsageEstimate(
         return null;
     }
 
+    const remaining = nextResetTime - now;
+    if (remaining > 4.5 * 60 * 60 * 1000) {
+        return null;
+    }
+
     const projectedPercentage = (percentage / elapsed) * totalDuration;
 
     const msToExhaust = projectedPercentage > 0

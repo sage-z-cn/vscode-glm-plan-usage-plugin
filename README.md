@@ -145,6 +145,9 @@ elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 
 ### 更新日志
 
+#### 1.6.2
+- **修正5小时配额预估限制**：修正配额预估的时间计算
+
 #### 1.6.0
 - **显示套餐级别与每日用量**：Tooltip 标题显示当前套餐级别（Lite/Pro/Max），新增过去 7 天每日 Token 用量统计
 
@@ -337,6 +340,9 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.6.2
+- **Fix 5-Hour Quota Estimation Limit**: Fixed the time calculation for quota estimation
 
 #### 1.6.1
 - **Display**: Add weekday to time display, rename section titles
