@@ -134,6 +134,25 @@ function formatDuration(ms: number): string {
     }
 }
 
+/** 格式化剩余时间为紧凑格式：>=1d → 3.5d，>=1h → 1.5h，<1h → 55m */
+function formatRemainingTimeCompact(nextResetTime: number | undefined): string {
+    if (!nextResetTime) { return '--'; }
+    const diff = nextResetTime - Date.now();
+    if (diff <= 0) { return '0m'; }
+
+    const totalMinutes = Math.floor(diff / 60000);
+    const hours = totalMinutes / 60;
+    const days = hours / 24;
+
+    if (days >= 1) {
+        return `${days.toFixed(1)}d`;
+    } else if (hours >= 1) {
+        return `${hours.toFixed(1)}h`;
+    } else {
+        return `${totalMinutes}m`;
+    }
+}
+
 /**
  * 计算预估是否会超出限额，统一按时间速率线性预估
  * 数据量较少时不进行预估：距离下次刷新时间大于4.5小时时不进行预估
@@ -259,11 +278,15 @@ export class StatusBarManager implements vscode.Disposable {
         const weeklyPct = weeklyLimit?.percentage;
 
         if (fiveHourLimit !== undefined && weeklyLimit !== undefined) {
-            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% | ${weeklyPct!.toFixed(0)}%`;
+            const t5 = formatRemainingTimeCompact(fiveHourLimit.nextResetTime);
+            const tw = formatRemainingTimeCompact(weeklyLimit.nextResetTime);
+            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% ${t5} | ${weeklyPct!.toFixed(0)}% ${tw}`;
         } else if (fiveHourLimit !== undefined) {
-            this.statusItem.text = `GLM: 5h ${fiveHourPct!.toFixed(0)}%`;
+            const t5 = formatRemainingTimeCompact(fiveHourLimit.nextResetTime);
+            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% ${t5}`;
         } else if (weeklyLimit !== undefined) {
-            this.statusItem.text = `GLM: Week ${weeklyPct!.toFixed(0)}%`;
+            const tw = formatRemainingTimeCompact(weeklyLimit.nextResetTime);
+            this.statusItem.text = `GLM: ${weeklyPct!.toFixed(0)}% ${tw}`;
         } else {
             this.statusItem.text = 'GLM: N/A';
         }

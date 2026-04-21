@@ -28,11 +28,11 @@
 状态栏右侧显示用量指标：
 
 ```
-GLM: 20% | 21%
+GLM: 20% 4.2h | 21% 3.5d
 ```
 
-- `20%` - 5小时配额使用率
-- `21%` - 周配额使用率
+- `20%` `4.2h` - 5小时配额使用率及剩余重置时间
+- `21%` `3.5d` - 周配额使用率及剩余重置时间
 
 #### 悬停显示
 
@@ -144,6 +144,9 @@ elapsed = 周期总时长 - (下次重置时间 - 当前时间)
 扩展会在启动时自动查询并定时刷新。
 
 ### 更新日志
+
+#### 1.6.3
+- **状态栏显示剩余时间**：配额百分比后显示重置倒计时
 
 #### 1.6.2
 - **修正5小时配额预估限制**：修正配额预估的时间计算
@@ -340,6 +343,9 @@ If you previously configured the API Key in `settings.json`, the extension will 
 The extension will automatically query on startup and refresh periodically.
 
 ### Changelog
+
+#### 1.6.3
+- **Status Bar Remaining Time**: Show reset countdown after quota percentage
 
 #### 1.6.2
 - **Fix 5-Hour Quota Estimation Limit**: Fixed the time calculation for quota estimation
