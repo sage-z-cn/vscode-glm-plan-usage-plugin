@@ -400,14 +400,14 @@ export class StatusBarManager implements vscode.Disposable {
             }
             md.appendMarkdown('\n');
 
-            const sparkline = this.buildSparkline(todayData);
-            if (sparkline) {
-                const startTime = this.formatSparklineTime(todayData.xTime[0]);
+            const sparklineResult = this.buildSparkline(todayData);
+            if (sparklineResult) {
+                const startTime = this.formatSparklineTime(todayData.xTime[sparklineResult.startIndex]);
                 const lastIdx = todayData.xTime.length - 1;
                 const endTime = this.formatSparklineTime(todayData.xTime[lastIdx], true);
                 md.appendMarkdown(`**${vscode.l10n.t('Today Trend')} (${startTime}~${endTime}):**\n\n`);
                 md.appendMarkdown('```\n');
-                md.appendMarkdown(sparkline);
+                md.appendMarkdown(sparklineResult.bars);
                 md.appendMarkdown('\n```\n');
             }
         }
@@ -566,9 +566,9 @@ export class StatusBarManager implements vscode.Disposable {
         return `[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percentage.toFixed(1)}%`;
     }
 
-    private buildSparkline(trend: TrendSlice): string {
+    private buildSparkline(trend: TrendSlice): { bars: string; startIndex: number } | null {
         if (!trend.yValue || trend.yValue.length === 0) {
-            return '';
+            return null;
         }
 
         const recentValues = trend.yValue.slice(-24);
@@ -585,11 +585,10 @@ export class StatusBarManager implements vscode.Disposable {
 
         // 从第一个有数据的位置开始截取
         const displayValues = recentValues.slice(firstValidIndex);
-        const displayTimes = recentTimes.slice(firstValidIndex);
 
         const validValues = displayValues.filter((v): v is number => v !== null && v > 0);
         if (validValues.length === 0) {
-            return '';
+            return null;
         }
 
         const max = Math.max(...validValues, 1);
@@ -610,11 +609,9 @@ export class StatusBarManager implements vscode.Disposable {
             }
         }
 
-        if (displayValues.length < 6) {
-            return bars;
-        }
-
-        return bars;
+        // startIndex 是相对于 todayData 的偏移量
+        const offset = trend.yValue.length - recentValues.length;
+        return { bars, startIndex: offset + firstValidIndex };
     }
 
     private formatSparklineTime(t: string, isEnd = false): string {
