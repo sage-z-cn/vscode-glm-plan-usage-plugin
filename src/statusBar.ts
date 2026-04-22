@@ -566,13 +566,13 @@ export class StatusBarManager implements vscode.Disposable {
         return `[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percentage.toFixed(1)}%`;
     }
 
+    /** 构建趋势迷你图，返回柱状图字符串及相对于原始数据的起始索引，无有效数据时返回 null */
     private buildSparkline(trend: TrendSlice): { bars: string; startIndex: number } | null {
         if (!trend.yValue || trend.yValue.length === 0) {
             return null;
         }
 
         const recentValues = trend.yValue.slice(-24);
-        const recentTimes = trend.xTime.slice(-Math.min(24, trend.xTime.length));
 
         // 找到第一个有数据的索引
         let firstValidIndex = 0;
