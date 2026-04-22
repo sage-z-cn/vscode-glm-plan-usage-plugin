@@ -236,6 +236,12 @@ export class StatusBarManager implements vscode.Disposable {
         this.statusItem.show();
     }
 
+    /** 强制关闭当前 tooltip 并重新显示状态栏，使下次悬停时渲染最新数据 */
+    refreshTooltip(): void {
+        this.statusItem.hide();
+        this.statusItem.show();
+    }
+
     /** 设置用户活动状态并更新状态栏外观颜色 */
     setUserActivityState(state: UserActivityState): void {
         this.userActivityState = state;

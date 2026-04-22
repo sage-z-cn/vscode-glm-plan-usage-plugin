@@ -111,6 +111,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 return;
             }
             await queryUsage(true);
+            statusBarManager.refreshTooltip();
         }
     );
 
