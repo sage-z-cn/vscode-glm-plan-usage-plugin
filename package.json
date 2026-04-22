@@ -36,14 +36,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "glmPlanUsage.query",
-        "title": "%command.query.title%",
-        "description": "%command.query.description%"
-      },
-      {
         "command": "glmPlanUsage.setToken",
         "title": "%command.setToken.title%",
         "description": "%command.setToken.description%"
+      },
+      {
+        "command": "glmPlanUsage.refresh",
+        "title": "%command.refresh.title%",
+        "description": "%command.refresh.description%"
       }
     ],
     "configuration": {

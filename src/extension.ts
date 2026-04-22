@@ -104,13 +104,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 查询配额命令
     const queryCommand = vscode.commands.registerCommand(
-        'glmPlanUsage.query',
+        'glmPlanUsage.refresh',
         async () => {
             if (!(await ConfigManager.hasValidConfig())) {
                 vscode.commands.executeCommand('glmPlanUsage.setToken');
                 return;
             }
-            // 手动点击时跳过缓存，强制请求最新数据
             await queryUsage(true);
         }
     );
@@ -120,7 +119,7 @@ export async function activate(context: vscode.ExtensionContext) {
         'glmPlanUsage.setToken',
         async () => {
             const token = await vscode.window.showInputBox({
-                prompt: vscode.l10n.t('Enter your GLM API Key'),
+                prompt: vscode.l10n.t('Enter your GLM API Key (encrypted via OS keychain)'),
                 password: true,
                 ignoreFocusOut: true
             });

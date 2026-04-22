@@ -225,7 +225,7 @@ export class StatusBarManager implements vscode.Disposable {
             100
         );
 
-        this.statusItem.command = 'glmPlanUsage.query';
+        this.statusItem.command = 'glmPlanUsage.refresh';
         this.statusItem.text = '$(sync~spin) GLM: --';
         this.statusItem.hide();
 
@@ -433,6 +433,8 @@ export class StatusBarManager implements vscode.Disposable {
         md.appendMarkdown(`[$(gear) ${vscode.l10n.t('Settings')}](command:workbench.action.openSettings?%22glmPlanUsage%22 "${vscode.l10n.t('Settings')}")`);
         md.appendMarkdown('\u00a0|\u00a0');
         md.appendMarkdown(`[$(key) ${vscode.l10n.t('Configure API Key')}](command:glmPlanUsage.setToken "${vscode.l10n.t('Configure API Key')}")`);
+        md.appendMarkdown('\u00a0|\u00a0');
+        md.appendMarkdown(`[$(refresh) ${vscode.l10n.t('Refresh')}](command:glmPlanUsage.refresh "${vscode.l10n.t('Refresh')}")`);
 
         this.statusItem.tooltip = md;
     }

@@ -1,6 +1,6 @@
 {
-  "command.query.title": "GLM Plan Usage: Query Usage Statistics",
-  "command.query.description": "Query current GLM plan usage and quota information",
+  "command.refresh.title": "GLM Plan Usage: Refresh Usage Statistics",
+  "command.refresh.description": "Refresh current GLM plan usage and quota information",
   "command.setToken.title": "GLM Plan Usage: Set API Key",
   "command.setToken.description": "Securely set your GLM API Key using encrypted storage (never written to files)",
   "configuration.title": "GLM Plan Usage",

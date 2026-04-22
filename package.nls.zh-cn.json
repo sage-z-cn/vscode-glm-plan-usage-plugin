@@ -1,6 +1,6 @@
 {
-  "command.query.title": "GLM Plan Usage: 查询使用统计",
-  "command.query.description": "查询当前 GLM 计划的使用情况和配额信息",
+  "command.refresh.title": "GLM Plan Usage: 刷新使用统计",
+  "command.refresh.description": "刷新当前 GLM 计划的使用情况和配额信息",
   "command.setToken.title": "GLM Plan Usage: 设置 API Key",
   "command.setToken.description": "安全设置 GLM API Key，使用加密存储（绝不写入文件）",
   "configuration.title": "GLM Plan Usage",
