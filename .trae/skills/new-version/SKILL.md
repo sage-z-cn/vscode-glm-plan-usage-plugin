@@ -26,16 +26,34 @@ Invoke this skill when:
 
 ## Step 1: Collect Information
 
-If the user has NOT specified the version number and/or changelog content:
+### 1.1 Collect Changelog
 
-1. **Version number**: If not provided, ask the user what the new version number is (e.g., `1.7.0`). The current version can be read from `package.json`.
-2. **Changelog**:
-   - If the user has provided changelog content, use it directly.
-   - If the user has NOT provided changelog content, **use git log to generate changelog entries**:
-     1. Run `git describe --tags --abbrev=0` to find the latest version tag.
-     2. Run `git log <latest_tag>..HEAD --oneline` to get all commits since the last tag.
-     3. Summarize these commits into concise changelog entries in Chinese, following the existing style in `changelog.md`.
-     4. **Only include plugin-related changes** (features, bug fixes, UI changes, performance improvements, etc.). Exclude non-plugin changes such as SKILL.md modifications, README updates, CI/config changes, or development tooling adjustments.
+- If the user has provided changelog content, use it directly.
+- If the user has NOT provided changelog content, **use git log to generate changelog entries**:
+  1. Run `git describe --tags --abbrev=0` to find the latest version tag.
+  2. Run `git log <latest_tag>..HEAD --oneline` to get all commits since the last tag.
+  3. Summarize these commits into concise changelog entries in Chinese, following the existing style in `changelog.md`.
+  4. **Only include plugin-related changes** (features, bug fixes, UI changes, performance improvements, etc.). Exclude non-plugin changes such as SKILL.md modifications, README updates, CI/config changes, or development tooling adjustments.
+
+### 1.2 Determine Version Number
+
+- If the user has specified the version number, use it directly.
+- If the user has NOT specified the version number, **auto-determine based on the changelog content** using Semantic Versioning rules:
+
+  Read the current version from `package.json` (format: `MAJOR.MINOR.PATCH`, e.g., `1.6.3`), then decide the bump type:
+
+  | Bump Type | Condition | Example (`1.6.3` →) |
+  |---|---|---|
+  | **PATCH** (修订号) | Bug fixes, minor optimizations, small improvements that are fully backward compatible | `1.6.4` |
+  | **MINOR** (次版本号) | New features, new functionality, significant enhancements that are backward compatible | `1.7.0` |
+  | **MAJOR** (主版本号) | Breaking changes, major architecture refactoring, incompatible API changes | `2.0.0` |
+
+  **Decision logic** (evaluate in order):
+  1. If the changelog contains breaking changes or major architectural refactoring → bump **MAJOR**.
+  2. If the changelog contains new features or significant new functionality → bump **MINOR**.
+  3. Otherwise (bug fixes, minor optimizations, small improvements) → bump **PATCH**.
+
+  After determining the new version number, inform the user of the auto-determined version and the reason before proceeding.
 
 ## Step 2: Update package.json
 
