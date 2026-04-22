@@ -278,15 +278,15 @@ export class StatusBarManager implements vscode.Disposable {
         const weeklyPct = weeklyLimit?.percentage;
 
         if (fiveHourLimit !== undefined && weeklyLimit !== undefined) {
-            const t5 = formatRemainingTimeCompact(fiveHourLimit.nextResetTime);
-            const tw = formatRemainingTimeCompact(weeklyLimit.nextResetTime);
-            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% ${t5} | ${weeklyPct!.toFixed(0)}% ${tw}`;
+            const t5 = fiveHourLimit.nextResetTime ? formatRemainingTimeCompact(fiveHourLimit.nextResetTime) : '';
+            const tw = weeklyLimit.nextResetTime ? formatRemainingTimeCompact(weeklyLimit.nextResetTime) : '';
+            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}%${t5 ? ' ' + t5 : ''} | ${weeklyPct!.toFixed(0)}%${tw ? ' ' + tw : ''}`;
         } else if (fiveHourLimit !== undefined) {
-            const t5 = formatRemainingTimeCompact(fiveHourLimit.nextResetTime);
-            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}% ${t5}`;
+            const t5 = fiveHourLimit.nextResetTime ? formatRemainingTimeCompact(fiveHourLimit.nextResetTime) : '';
+            this.statusItem.text = `GLM: ${fiveHourPct!.toFixed(0)}%${t5 ? ' ' + t5 : ''}`;
         } else if (weeklyLimit !== undefined) {
-            const tw = formatRemainingTimeCompact(weeklyLimit.nextResetTime);
-            this.statusItem.text = `GLM: ${weeklyPct!.toFixed(0)}% ${tw}`;
+            const tw = weeklyLimit.nextResetTime ? formatRemainingTimeCompact(weeklyLimit.nextResetTime) : '';
+            this.statusItem.text = `GLM: ${weeklyPct!.toFixed(0)}%${tw ? ' ' + tw : ''}`;
         } else {
             this.statusItem.text = 'GLM: N/A';
         }
