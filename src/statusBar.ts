@@ -11,22 +11,17 @@ interface TrendSlice {
 interface ColorParams {
     fiveHourPct?: number;
     weeklyPct?: number;
-    fiveHourWillExceed?: boolean;
 }
 
 function getCombinedColor(params: ColorParams): string {
-    const { fiveHourPct = 0, weeklyPct = 0, fiveHourWillExceed = false } = params;
-
+    const { fiveHourPct = 0, weeklyPct = 0 } = params;
     const maxPct = Math.max(fiveHourPct, weeklyPct);
-    const willExceed = fiveHourWillExceed;
 
-    // 额度剩余不足10%（即使用超过90%）时显示红色
     if (maxPct >= 90) {
         return '#F44747';
     }
 
-    // 预估会超出时显示黄色
-    if (willExceed) {
+    if (maxPct >= 70) {
         return '#CCA700';
     }
 
@@ -297,14 +292,9 @@ export class StatusBarManager implements vscode.Disposable {
             this.statusItem.text = 'GLM: N/A';
         }
 
-        const fiveHourEstimate = fiveHourLimit
-            ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime)
-            : null;
-
         this.statusItem.color = getCombinedColor({
             fiveHourPct,
-            weeklyPct,
-            fiveHourWillExceed: fiveHourEstimate?.willExceed ?? false
+            weeklyPct
         });
         this.buildTooltip(response);
         this.show();
@@ -344,7 +334,7 @@ export class StatusBarManager implements vscode.Disposable {
             const color = getCombinedColor({ fiveHourPct: fiveHourLimit.percentage });
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('5 Hour Quota')}:**\n\n`);
-            md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
+            md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
             // 添加5小时配额使用预估
@@ -371,7 +361,7 @@ export class StatusBarManager implements vscode.Disposable {
             const color = getCombinedColor({ weeklyPct: weeklyLimit.percentage });
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
             md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
-            md.appendMarkdown(`<span style="color:${color}">${bar}</span>\n\n`);
+            md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
         }
 
@@ -567,7 +557,8 @@ export class StatusBarManager implements vscode.Disposable {
     private buildMarkdownBar(percentage: number, width: number): string {
         const filled = Math.round((percentage / 100) * width);
         const empty = width - filled;
-        return `[${'█'.repeat(filled)}${'░'.repeat(empty)}] ${percentage.toFixed(1)}%`;
+        const on = percentage >= 90 ? '🟥' : percentage >= 70 ? '�' : '🟩';
+        return `${on.repeat(filled)}${'⬜'.repeat(empty)} ${percentage.toFixed(1)}%`;
     }
 
     /** 构建趋势迷你图，返回柱状图字符串及相对于原始数据的起始索引，无有效数据时返回 null */
