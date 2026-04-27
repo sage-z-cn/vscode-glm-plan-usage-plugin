@@ -417,9 +417,13 @@ export class StatusBarManager implements vscode.Disposable {
             const dailyData = this.aggregateDailyData(response.trend);
             if (dailyData.length > 0) {
                 md.appendMarkdown(`---\n\n`);
-                md.appendMarkdown(`**${vscode.l10n.t('7-Day Usage')}:**\n\n`);
-
+                const total7DayTokens = dailyData.reduce((sum, d) => sum + d.tokens, 0);
                 const weeklyQuota = response.level ? WEEKLY_QUOTA[response.level.toLowerCase()] : undefined;
+                const total7DayPct = weeklyQuota ? (total7DayTokens / weeklyQuota * 100).toFixed(1) : undefined;
+                const total7DayLabel = total7DayPct
+                    ? `${formatTokens(total7DayTokens)} (${total7DayPct}%)`
+                    : formatTokens(total7DayTokens);
+                md.appendMarkdown(`**${vscode.l10n.t('7-Day Usage')}**: ${total7DayLabel}\n\n`);
 
                 for (const day of dailyData) {
                     if (day.tokens === 0) {
