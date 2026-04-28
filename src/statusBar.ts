@@ -557,7 +557,7 @@ export class StatusBarManager implements vscode.Disposable {
     private buildMarkdownBar(percentage: number, width: number): string {
         const filled = Math.round((percentage / 100) * width);
         const empty = width - filled;
-        const on = percentage >= 90 ? '🟥' : percentage >= 70 ? '�' : '🟩';
+        const on = percentage >= 90 ? '🟥' : percentage >= 70 ? '🟨' : '🟩';
         return `${on.repeat(filled)}${'⬜'.repeat(empty)} ${percentage.toFixed(1)}%`;
     }
 
