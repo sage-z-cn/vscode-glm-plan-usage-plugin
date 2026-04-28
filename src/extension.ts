@@ -56,15 +56,15 @@ function checkQuotaWarning(response: UsageResponse): void {
             warnedResetTimes.add(item.nextResetTime);
             if (item.type === QUOTA_TYPE_5H) {
                 vscode.window.showWarningMessage(
-                    vscode.l10n.t('⚠ GLM Plan 5-hour quota warning: {0}% used', item.percentage.toFixed(1))
+                    vscode.l10n.t('GLM Plan 5-hour quota warning: {0}% used', item.percentage.toFixed(1))
                 );
             } else if (item.type === QUOTA_TYPE_WEEKLY) {
                 vscode.window.showWarningMessage(
-                    vscode.l10n.t('⚠ GLM Plan weekly quota warning: {0}% used', item.percentage.toFixed(1))
+                    vscode.l10n.t('GLM Plan weekly quota warning: {0}% used', item.percentage.toFixed(1))
                 );
             } else {
                 vscode.window.showWarningMessage(
-                    vscode.l10n.t('⚠ GLM Plan quota warning: {0} has reached {1}%', item.type, item.percentage.toFixed(1))
+                    vscode.l10n.t('GLM Plan quota warning: {0} has reached {1}%', item.type, item.percentage.toFixed(1))
                 );
             }
         }
