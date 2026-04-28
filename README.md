@@ -10,6 +10,7 @@
 
 - **状态栏监控**：实时显示 5 小时/周配额百分比，颜色预警（🟥≥90% / 🟨70-89% / 🟩<70%）
 - **悬停详情**：配额信息、套餐级别、七天用量及今日趋势图
+- **使用预估**：基于当前消耗速率预测配额使用情况（使用量 ≥ 50% 时显示）
 - **今日统计**：Token 用量、调用次数、峰值数据
 - **趋势图表**：Unicode 柱状图展示每小时使用趋势
 - **配额预警**：使用率 ≥ 90% 自动通知
@@ -64,8 +65,10 @@ GLM: 20% 4.2h | 21% 3.5d
 预估用量: 39.8%
 
 周配额:
-🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 34.0%
+🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 55.0%
 下次刷新: 2天 22小时 (04-16 星期四 17:02)
+预计用完: 1天 8小时
+预估用量: 92.3%
 
 今日用量:
 • 今日 Token: 16.50M
@@ -107,8 +110,9 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 ### Features
 
-- **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (�≥90% / 🟡70-89% / �<70%)
+- **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (🟥≥90% / 🟡70-89% / 🟢<70%)
 - **Rich Tooltip**: Quota details, plan level, 7-day usage & today's trend chart
+- **Usage Estimate**: Predict quota usage based on current consumption rate (shown when usage ≥ 50%)
 - **Today Stats**: Token usage, call count, peak data
 - **Trend Chart**: Unicode bar chart for hourly usage trends
 - **Quota Warning**: Auto notification at ≥90%
@@ -144,11 +148,11 @@ Use the command to set your API Key (encrypted storage, never written to files):
 Usage metrics displayed on the right side of the status bar:
 
 ```
-GLM: 20% | 21%
+GLM: 20% 4.2h | 21% 3.5d
 ```
 
-- `20%` - 5-hour quota usage percentage
-- `21%` - Weekly quota usage percentage
+- `20%` `4.2h` - 5-hour quota usage percentage and remaining reset time
+- `21%` `3.5d` - Weekly quota usage percentage and remaining reset time
 
 #### Tooltip
 
@@ -163,8 +167,10 @@ Est. Exhaust: 3h 55m
 Est. Usage: 39.8%
 
 Weekly Quota:
-████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 34.0%
+██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 55.0%
 Next Reset: 2d 22h (04-16 Thu 17:02)
+Est. Exhaust: 1d 8h
+Est. Usage: 92.3%
 
 Today Usage:
 • Today Tokens: 16.50M
