@@ -160,6 +160,10 @@ function calculateUsageEstimate(
         return null;
     }
 
+    if (percentage < 50) {
+        return null;
+    }
+
     const now = new Date().getTime();
     const totalDuration = 5 * 60 * 60 * 1000;
     const elapsed = totalDuration - (nextResetTime - now);
@@ -168,12 +172,41 @@ function calculateUsageEstimate(
         return null;
     }
 
-    if (elapsed > 4.5 * 60 * 60 * 1000) {
+    const projectedPercentage = (percentage / elapsed) * totalDuration;
+
+    const msToExhaust = projectedPercentage > 0
+        ? totalDuration * 100 / projectedPercentage - elapsed
+        : 0;
+
+    const willExceed = projectedPercentage > 95;
+    const estimatedExhaustTime = msToExhaust > 0 ? now + msToExhaust : undefined;
+    const timeToExhaust = msToExhaust > 0 ? formatDuration(msToExhaust) : vscode.l10n.t('Already exceeded');
+
+    return {
+        willExceed,
+        projectedPercentage,
+        estimatedExhaustTime,
+        timeToExhaust
+    };
+}
+
+function calculateWeeklyUsageEstimate(
+    percentage: number,
+    nextResetTime: number | undefined
+): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
+    if (!nextResetTime || percentage <= 0) {
         return null;
     }
 
-    const remaining = nextResetTime - now;
-    if (remaining > 4.5 * 60 * 60 * 1000) {
+    if (percentage < 50) {
+        return null;
+    }
+
+    const now = new Date().getTime();
+    const totalDuration = 7 * 24 * 60 * 60 * 1000;
+    const elapsed = totalDuration - (nextResetTime - now);
+
+    if (elapsed <= 0) {
         return null;
     }
 
@@ -363,6 +396,23 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
+
+            const weeklyEstimate = calculateWeeklyUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime);
+            if (weeklyEstimate) {
+                if (weeklyEstimate.timeToExhaust) {
+                    if (weeklyEstimate.projectedPercentage <= 100) {
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                    } else {
+                        const exhaustDate = weeklyEstimate.estimatedExhaustTime
+                            ? formatDateTimeOnly(weeklyEstimate.estimatedExhaustTime)
+                            : '';
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${weeklyEstimate.timeToExhaust} (${exhaustDate})\n\n`);
+                    }
+                }
+                const estimateColor = weeklyEstimate.willExceed ? '#F44747' : (weeklyEstimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
+                const overWarning = weeklyEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${weeklyEstimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
+            }
         }
 
         if (!fiveHourLimit && !weeklyLimit) {
