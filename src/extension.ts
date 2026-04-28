@@ -7,6 +7,7 @@ import { UsageResponse, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState } fr
 
 const CACHE_KEY = 'glmPlanUsage.cache';
 const MIGRATION_KEY = 'glmPlanUsage.tokenMigrated';
+const WARNED_RESET_TIMES_KEY = 'glmPlanUsage.warnedResetTimes';
 
 interface CachedUsage {
     data: UsageResponse;
@@ -16,7 +17,6 @@ interface CachedUsage {
 let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
 let globalState: vscode.Memento;
-const warnedResetTimes = new Set<number>();
 
 /** 用户活动监控器实例 */
 let activityMonitor: ActivityMonitor | undefined;
@@ -42,8 +42,21 @@ async function migrateAuthToken(context: vscode.ExtensionContext): Promise<void>
     await context.globalState.update(MIGRATION_KEY, true);
 }
 
-function checkQuotaWarning(response: UsageResponse): void {
+/** 从 globalState 获取已警告的重置时间集合 */
+function getWarnedResetTimes(): Set<number> {
+    const stored = globalState.get<number[]>(WARNED_RESET_TIMES_KEY, []);
+    return new Set(stored);
+}
+
+/** 将已警告的重置时间集合保存到 globalState */
+async function saveWarnedResetTimes(warnedSet: Set<number>): Promise<void> {
+    await globalState.update(WARNED_RESET_TIMES_KEY, Array.from(warnedSet));
+}
+
+async function checkQuotaWarning(response: UsageResponse): Promise<void> {
     const now = Date.now();
+    const warnedResetTimes = getWarnedResetTimes();
+
     // 清理已过期的重置时间，防止内存泄漏
     for (const resetTime of warnedResetTimes) {
         if (resetTime < now) {
@@ -51,9 +64,11 @@ function checkQuotaWarning(response: UsageResponse): void {
         }
     }
 
+    let hasNewWarning = false;
     for (const item of response.quotaLimits) {
         if (item.percentage >= 90 && item.nextResetTime && !warnedResetTimes.has(item.nextResetTime)) {
             warnedResetTimes.add(item.nextResetTime);
+            hasNewWarning = true;
             if (item.type === QUOTA_TYPE_5H) {
                 vscode.window.showWarningMessage(
                     vscode.l10n.t('GLM Plan 5-hour quota warning: {0}% used', item.percentage.toFixed(1))
@@ -68,6 +83,11 @@ function checkQuotaWarning(response: UsageResponse): void {
                 );
             }
         }
+    }
+
+    // 如果有新的警告或清理了过期数据，保存到 globalState
+    if (hasNewWarning || Array.from(warnedResetTimes).length !== globalState.get<number[]>(WARNED_RESET_TIMES_KEY, []).length) {
+        await saveWarnedResetTimes(warnedResetTimes);
     }
 }
 
@@ -179,7 +199,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
             const cached = getCachedUsage();
             if (cached) {
                 statusBarManager.updateUsage(cached);
-                checkQuotaWarning(cached);
+                await checkQuotaWarning(cached);
                 return;
             }
         }
@@ -188,7 +208,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
         setCachedUsage(response);
         statusBarManager.updateUsage(response);
 
-        checkQuotaWarning(response);
+        await checkQuotaWarning(response);
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : vscode.l10n.t('Unknown error');
         statusBarManager.setError(errorMessage);
