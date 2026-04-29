@@ -348,15 +348,18 @@ export class StatusBarManager implements vscode.Disposable {
         // 构建带套餐级别的标题
         const level = response.level;
         let titleKey: string;
-        
+
         if (level) {
             const levelText = level.charAt(0).toUpperCase() + level.slice(1);
             titleKey = `[${levelText}] GLM Coding Plan Usage`;
         } else {
             titleKey = 'GLM Coding Plan Usage';
         }
-        
-        md.appendMarkdown(`### ${vscode.l10n.t(titleKey)}\n\n`);
+
+        const title = vscode.l10n.t(titleKey);
+        // 中文环境下将 [] 替换为 【】
+        const localizedTitle = title.replace(/\[([^\]]+)\]/g, '【$1】');
+        md.appendMarkdown(`### ${localizedTitle}\n\n`);
 
         const now = new Date();
         md.appendMarkdown(`**${vscode.l10n.t('Updated')}:** ${now.toLocaleString()}\n\n`);
@@ -366,7 +369,9 @@ export class StatusBarManager implements vscode.Disposable {
         if (fiveHourLimit) {
             const color = getCombinedColor({ fiveHourPct: fiveHourLimit.percentage });
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
-            md.appendMarkdown(`**[${vscode.l10n.t('5 Hour Quota')}]**\n\n`);
+            const fiveHourQuotaTitle = vscode.l10n.t('5 Hour Quota');
+            const localizedFiveHourQuota = fiveHourQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+            md.appendMarkdown(`**【${localizedFiveHourQuota}】**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
@@ -394,7 +399,9 @@ export class StatusBarManager implements vscode.Disposable {
             md.appendMarkdown(`---\n\n`);
             const color = getCombinedColor({ weeklyPct: weeklyLimit.percentage });
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
-            md.appendMarkdown(`**[${vscode.l10n.t('Weekly Quota')}]**\n\n`);
+            const weeklyQuotaTitle = vscode.l10n.t('Weekly Quota');
+            const localizedWeeklyQuota = weeklyQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+            md.appendMarkdown(`**【${localizedWeeklyQuota}】**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
@@ -425,7 +432,9 @@ export class StatusBarManager implements vscode.Disposable {
             const todayData = this.filterTodayData(response.trend);
 
             md.appendMarkdown(`---\n\n`);
-            md.appendMarkdown(`**[${vscode.l10n.t('Today Usage')}]**\n\n`);
+            const todayUsageTitle = vscode.l10n.t('Today Usage');
+            const localizedTodayUsage = todayUsageTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+            md.appendMarkdown(`**【${localizedTodayUsage}】**\n\n`);
 
             md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n`);
             md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n`);
@@ -446,7 +455,9 @@ export class StatusBarManager implements vscode.Disposable {
                 const startTime = this.formatSparklineTime(todayData.xTime[sparklineResult.startIndex]);
                 const lastIdx = todayData.xTime.length - 1;
                 const endTime = this.formatSparklineTime(todayData.xTime[lastIdx], true);
-                md.appendMarkdown(`**${vscode.l10n.t('Today Trend')} (${startTime}~${endTime}):**\n\n`);
+                const todayTrendTitle = vscode.l10n.t('Today Trend');
+                const localizedTodayTrend = todayTrendTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+                md.appendMarkdown(`**【${localizedTodayTrend}】(${startTime}~${endTime}):**\n\n`);
                 md.appendMarkdown('```\n');
                 md.appendMarkdown(sparklineResult.bars);
                 md.appendMarkdown('\n```\n');
@@ -464,7 +475,9 @@ export class StatusBarManager implements vscode.Disposable {
                 const total7DayLabel = total7DayPct
                     ? `${formatTokens(total7DayTokens)} (${total7DayPct}%)`
                     : formatTokens(total7DayTokens);
-                md.appendMarkdown(`**[${vscode.l10n.t('7-Day Usage')}]** ${total7DayLabel}\n\n`);
+                const sevenDayUsageTitle = vscode.l10n.t('7-Day Usage');
+                const localizedSevenDayUsage = sevenDayUsageTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+                md.appendMarkdown(`**【${localizedSevenDayUsage}】** ${total7DayLabel}\n\n`);
 
                 for (const day of dailyData) {
                     if (day.tokens === 0) {
