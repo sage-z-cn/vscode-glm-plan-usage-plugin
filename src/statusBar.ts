@@ -473,7 +473,7 @@ export class StatusBarManager implements vscode.Disposable {
             (limit) => limit.type === QUOTA_TYPE_MCP
         );
 
-        if (mcpLimit) {
+        if (mcpLimit && (mcpLimit.currentUsage ?? 0) > 0) {
             md.appendMarkdown(`---\n\n`);
             const mcpBar = this.buildMarkdownBar(mcpLimit.percentage, 20);
             const mcpQuotaTitle = vscode.l10n.t('MCP Monthly Usage');
