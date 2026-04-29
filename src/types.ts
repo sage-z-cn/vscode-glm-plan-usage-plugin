@@ -1,6 +1,7 @@
 // 配额类型常量
 export const QUOTA_TYPE_5H = 'Token usage(5 Hour)';
 export const QUOTA_TYPE_WEEKLY = 'Token usage(Weekly)';
+export const QUOTA_TYPE_MCP = 'MCP usage(1 Month)';
 
 // 套餐周配额常量（Token 数）
 export const WEEKLY_QUOTA: Record<string, number> = {
@@ -44,6 +45,7 @@ export interface QuotaLimitData {
     percentage: number;
     currentUsage?: number;
     total?: number;
+    remaining?: number;
     usageDetails?: Record<string, unknown>;
     nextResetTime?: number;
 }

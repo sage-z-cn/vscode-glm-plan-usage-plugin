@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, UserActivityState, WEEKLY_QUOTA } from './types';
+import { UsageResponse, TrendData, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP, UserActivityState, WEEKLY_QUOTA } from './types';
 
 /** 趋势数据的通用切片，用于 getPeakToken / getPeakCalls / buildSparkline */
 interface TrendSlice {
@@ -72,7 +72,6 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
             const minutes = totalMinutes % 60;
             countdown = `${hours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
         } else if (quotaType === QUOTA_TYPE_WEEKLY) {
-            // 周配额：如果大于1天则显示 xd xh，否则显示 xh xm
             const days = Math.floor(hours / 24);
             const remainHours = hours % 24;
             if (days > 0) {
@@ -80,6 +79,15 @@ function formatResetTime(ts: number | undefined, quotaType?: string): string {
             } else {
                 const minutes = totalMinutes % 60;
                 countdown = `${remainHours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
+            }
+        } else if (quotaType === QUOTA_TYPE_MCP) {
+            const days = Math.floor(hours / 24);
+            const remainHours = hours % 24;
+            if (days > 0) {
+                countdown = `${days}${vscode.l10n.t('d')} ${remainHours}${vscode.l10n.t('h')}`;
+            } else {
+                const minutes = totalMinutes % 60;
+                countdown = `${hours}${vscode.l10n.t('h')} ${minutes}${vscode.l10n.t('m')}`;
             }
         } else {
             const parts: string[] = [];
@@ -204,6 +212,44 @@ function calculateWeeklyUsageEstimate(
 
     const now = new Date().getTime();
     const totalDuration = 7 * 24 * 60 * 60 * 1000;
+    const elapsed = totalDuration - (nextResetTime - now);
+
+    if (elapsed <= 0) {
+        return null;
+    }
+
+    const projectedPercentage = (percentage / elapsed) * totalDuration;
+
+    const msToExhaust = projectedPercentage > 0
+        ? totalDuration * 100 / projectedPercentage - elapsed
+        : 0;
+
+    const willExceed = projectedPercentage > 95;
+    const estimatedExhaustTime = msToExhaust > 0 ? now + msToExhaust : undefined;
+    const timeToExhaust = msToExhaust > 0 ? formatDuration(msToExhaust) : vscode.l10n.t('Already exceeded');
+
+    return {
+        willExceed,
+        projectedPercentage,
+        estimatedExhaustTime,
+        timeToExhaust
+    };
+}
+
+function calculateMonthlyUsageEstimate(
+    percentage: number,
+    nextResetTime: number | undefined
+): { willExceed: boolean; projectedPercentage: number; estimatedExhaustTime?: number; timeToExhaust?: string } | null {
+    if (!nextResetTime || percentage <= 0) {
+        return null;
+    }
+
+    if (percentage < 50) {
+        return null;
+    }
+
+    const now = new Date().getTime();
+    const totalDuration = 30 * 24 * 60 * 60 * 1000;
     const elapsed = totalDuration - (nextResetTime - now);
 
     if (elapsed <= 0) {
@@ -423,7 +469,44 @@ export class StatusBarManager implements vscode.Disposable {
             }
         }
 
-        if (!fiveHourLimit && !weeklyLimit) {
+        const mcpLimit = response.quotaLimits.find(
+            (limit) => limit.type === QUOTA_TYPE_MCP
+        );
+
+        if (mcpLimit) {
+            md.appendMarkdown(`---\n\n`);
+            const mcpBar = this.buildMarkdownBar(mcpLimit.percentage, 20);
+            const mcpQuotaTitle = vscode.l10n.t('MCP Monthly Usage');
+            const localizedMcpQuota = mcpQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
+            md.appendMarkdown(`**【${localizedMcpQuota}】**\n\n`);
+            md.appendMarkdown(`${mcpBar}\n\n`);
+
+            if (mcpLimit.total !== undefined && mcpLimit.currentUsage !== undefined) {
+                const remaining = mcpLimit.remaining ?? (mcpLimit.total - mcpLimit.currentUsage);
+                md.appendMarkdown(`**${vscode.l10n.t('Usage')}:** ${mcpLimit.currentUsage} / ${mcpLimit.total} (${vscode.l10n.t('Remaining')}: ${remaining})\n\n`);
+            }
+
+            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(mcpLimit.nextResetTime, QUOTA_TYPE_MCP)}\n\n`);
+
+            const mcpEstimate = calculateMonthlyUsageEstimate(mcpLimit.percentage, mcpLimit.nextResetTime);
+            if (mcpEstimate) {
+                if (mcpEstimate.timeToExhaust) {
+                    if (mcpEstimate.projectedPercentage <= 100) {
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                    } else {
+                        const exhaustDate = mcpEstimate.estimatedExhaustTime
+                            ? formatDateTimeOnly(mcpEstimate.estimatedExhaustTime)
+                            : '';
+                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${mcpEstimate.timeToExhaust} (${exhaustDate})\n\n`);
+                    }
+                }
+                const estimateColor = mcpEstimate.willExceed ? '#F44747' : (mcpEstimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
+                const overWarning = mcpEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${mcpEstimate.projectedPercentage.toFixed(1)}%${overWarning}</span> <span style="color:#888;font-size:0.85em">(${vscode.l10n.t('Estimated')})</span>\n\n`);
+            }
+        }
+
+        if (!fiveHourLimit && !weeklyLimit && !mcpLimit) {
             md.appendMarkdown(`**${vscode.l10n.t('Quota Usage')}:** N/A\n\n`);
         }
 

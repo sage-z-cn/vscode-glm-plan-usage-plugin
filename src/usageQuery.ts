@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import { URL } from 'url';
-import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './types';
+import { Platform, UsageResponse, ModelUsageData, ToolUsageData, QuotaLimitData, TrendData, ActiveDaysInfo, QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from './types';
 import { ConfigManager } from './config';
 
 export class UsageQueryService {
@@ -73,10 +73,11 @@ export class UsageQueryService {
             if (item.type === 'TIME_LIMIT') {
                 return {
                     ...base,
-                    type: 'MCP usage(1 Month)',
+                    type: QUOTA_TYPE_MCP,
                     percentage: item.percentage,
                     currentUsage: item.currentValue,
                     total: item.usage,
+                    remaining: item.remaining,
                     usageDetails: item.usageDetails
                 };
             }

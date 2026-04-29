@@ -61,5 +61,9 @@
   "Wed": "星期三",
   "Thu": "星期四",
   "Fri": "星期五",
-  "Sat": "星期六"
+  "Sat": "星期六",
+  "MCP Monthly Usage": "MCP每月用量",
+  "Usage": "用量",
+  "Remaining": "剩余",
+  "Estimated": "预估"
 }
