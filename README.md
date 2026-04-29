@@ -10,6 +10,7 @@
 
 - **状态栏监控**：实时显示 5 小时/周配额百分比，颜色预警（🟥≥90% / 🟨70-89% / 🟩<70%）
 - **悬停详情**：配额信息、套餐级别、七天用量及今日趋势图
+- **MCP 用量**：每月 MCP 工具调用配额监控，含进度条与用量预估
 - **使用预估**：基于当前消耗速率预测配额使用情况（使用量 ≥ 50% 时显示）
 - **今日统计**：Token 用量、调用次数、峰值数据
 - **趋势图表**：Unicode 柱状图展示每小时使用趋势
@@ -84,6 +85,16 @@ GLM: 20% 4.2h | 21% 3.5d
 >
 > ---
 >
+> **【MCP每月用量】**
+>
+> 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 15.0%
+>
+> **用量:** 150 / 1000 (剩余: 850)
+>
+> **下次刷新:** 18天 5小时 (05-11 星期一 00:00)
+>
+> ---
+>
 > **【今日用量】**
 >
 > - 今日词元: 16.50M
@@ -135,6 +146,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 - **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (🟥≥90% / 🟡70-89% / 🟢<70%)
 - **Rich Tooltip**: Quota details, plan level, 7-day usage & today's trend chart
+- **MCP Usage**: Monthly MCP tool call quota monitoring with progress bar & usage estimate
 - **Usage Estimate**: Predict quota usage based on current consumption rate (shown when usage ≥ 50%)
 - **Today Stats**: Token usage, call count, peak data
 - **Trend Chart**: Unicode bar chart for hourly usage trends
@@ -206,6 +218,16 @@ GLM: 20% 4.2h | 21% 3.5d
 > Time to exhaust: 1d 8h (04-14 Tue 03:15)
 >
 > **Usage Estimate:** 92.3% ⚠️
+>
+> ---
+>
+> **[MCP Monthly Usage]**
+>
+> 🟩🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜ 15.0%
+>
+> **Usage:** 150 / 1000 (Remaining: 850)
+>
+> **Next reset:** 18d 5h (05-11 Mon 00:00)
 >
 > ---
 >
