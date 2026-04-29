@@ -366,7 +366,7 @@ export class StatusBarManager implements vscode.Disposable {
         if (fiveHourLimit) {
             const color = getCombinedColor({ fiveHourPct: fiveHourLimit.percentage });
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
-            md.appendMarkdown(`**${vscode.l10n.t('5 Hour Quota')}:**\n\n`);
+            md.appendMarkdown(`**[${vscode.l10n.t('5 Hour Quota')}]**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
@@ -391,9 +391,10 @@ export class StatusBarManager implements vscode.Disposable {
         }
 
         if (weeklyLimit) {
+            md.appendMarkdown(`---\n\n`);
             const color = getCombinedColor({ weeklyPct: weeklyLimit.percentage });
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
-            md.appendMarkdown(`**${vscode.l10n.t('Weekly Quota')}:**\n\n`);
+            md.appendMarkdown(`**[${vscode.l10n.t('Weekly Quota')}]**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
             md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
@@ -424,7 +425,7 @@ export class StatusBarManager implements vscode.Disposable {
             const todayData = this.filterTodayData(response.trend);
 
             md.appendMarkdown(`---\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Today Usage')}:**\n\n`);
+            md.appendMarkdown(`**[${vscode.l10n.t('Today Usage')}]**\n\n`);
 
             md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n`);
             md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n`);
@@ -463,7 +464,7 @@ export class StatusBarManager implements vscode.Disposable {
                 const total7DayLabel = total7DayPct
                     ? `${formatTokens(total7DayTokens)} (${total7DayPct}%)`
                     : formatTokens(total7DayTokens);
-                md.appendMarkdown(`**${vscode.l10n.t('7-Day Usage')}**: ${total7DayLabel}\n\n`);
+                md.appendMarkdown(`**[${vscode.l10n.t('7-Day Usage')}]** ${total7DayLabel}\n\n`);
 
                 for (const day of dailyData) {
                     if (day.tokens === 0) {

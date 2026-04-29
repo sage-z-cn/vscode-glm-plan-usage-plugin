@@ -160,19 +160,21 @@ GLM: 20% 4.2h | 21% 3.5d
 [Pro] GLM Coding Plan Usage
 Updated: 2026/4/13 18:38:47
 
-5h Quota:
+[5h Quota]
 ████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 37.0%
 Next Reset: 0h 20m (18:59:46)
 Est. Exhaust: 3h 55m
 Est. Usage: 39.8%
 
-Weekly Quota:
+---
+
+[Weekly Quota]
 ██████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 55.0%
 Next Reset: 2d 22h (04-16 Thu 17:02)
 Est. Exhaust: 1d 8h
 Est. Usage: 92.3%
 
-Today Usage:
+[Today Usage]
 • Today Tokens: 16.50M
 • Today Calls: 500
 • Peak Token: 5.89M (09:00)
