@@ -16,6 +16,7 @@ interface CachedUsage {
 
 let statusBarManager: StatusBarManager;
 let autoRefreshTimer: NodeJS.Timeout | undefined;
+let resetTimers: NodeJS.Timeout[] = [];
 let globalState: vscode.Memento;
 
 /** 用户活动监控器实例 */
@@ -112,6 +113,12 @@ function setCachedUsage(data: UsageResponse): void {
 export async function activate(context: vscode.ExtensionContext) {
     console.log('GLM Plan Usage extension is activating...');
 
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = undefined;
+    }
+    clearResetTimers();
+
     globalState = context.globalState;
     extensionContext = context;
     statusBarManager = new StatusBarManager();
@@ -207,6 +214,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
         const response = await UsageQueryService.queryUsage();
         setCachedUsage(response);
         statusBarManager.updateUsage(response);
+        scheduleResetRefresh(response);
 
         await checkQuotaWarning(response);
     } catch (error) {
@@ -234,6 +242,33 @@ function setupAutoRefresh(): void {
                 await queryUsage();
             }
         }, interval * 1000);
+    }
+}
+
+const RESET_DELAY_MS = 10_000;
+
+function clearResetTimers(): void {
+    for (const timer of resetTimers) {
+        clearTimeout(timer);
+    }
+    resetTimers = [];
+}
+
+function scheduleResetRefresh(response: UsageResponse): void {
+    clearResetTimers();
+
+    const now = Date.now();
+
+    for (const limit of response.quotaLimits) {
+        if (limit.nextResetTime && limit.nextResetTime > now) {
+            const delay = limit.nextResetTime - now + RESET_DELAY_MS;
+            const timer = setTimeout(async () => {
+                if (await ConfigManager.hasValidConfig()) {
+                    await queryUsage(true);
+                }
+            }, delay);
+            resetTimers.push(timer);
+        }
     }
 }
 
@@ -330,6 +365,7 @@ export function deactivate() {
     if (autoRefreshTimer) {
         clearInterval(autoRefreshTimer);
     }
+    clearResetTimers();
     if (activityMonitor) {
         activityMonitor.dispose();
         activityMonitor = undefined;
