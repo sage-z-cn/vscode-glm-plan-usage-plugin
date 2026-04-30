@@ -8,7 +8,7 @@
 
 ### 功能特性
 
-- **状态栏监控**：实时显示 5 小时/周配额百分比，颜色预警（🟥≥90% / 🟨70-89% / 🟩<70%）
+- **状态栏监控**：实时显示 5 小时/周配额百分比，颜色预警（🟥≥90% / 🟨70-89% / 🟩<70%），预估充裕时始终显示绿色
 - **悬停详情**：配额信息、套餐级别、七天用量及今日趋势图
 - **MCP 用量**：每月 MCP 工具调用配额监控，含进度条与用量预估（用量为0时不显示）
 - **使用预估**：基于当前消耗速率预测配额使用情况（使用量 ≥ 50% 时显示）
@@ -98,8 +98,11 @@ GLM: 20% 4.2h | 21% 3.5d
 > **【今日用量】**
 >
 > 今日词元: 16.50M
+>
 > 今日调用: 500
+>
 > 峰值词元: 5.89M (09:00)
+>
 > 峰值调用: 145 (09:00)
 >
 > **今日趋势 (0:00~18:54):**
@@ -144,7 +147,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 ### Features
 
-- **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (🟥≥90% / 🟡70-89% / 🟢<70%)
+- **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (🟥≥90% / 🟡70-89% / 🟢<70%), always green when usage estimate is sufficient
 - **Rich Tooltip**: Quota details, plan level, 7-day usage & today's trend chart
 - **MCP Usage**: Monthly MCP tool call quota monitoring with progress bar & usage estimate (hidden when usage is 0)
 - **Usage Estimate**: Predict quota usage based on current consumption rate (shown when usage ≥ 50%)
@@ -234,8 +237,11 @@ GLM: 20% 4.2h | 21% 3.5d
 > **[Today Usage]**
 >
 > Today Tokens: 16.50M
+>
 > Today Calls: 500
+>
 > Peak Token: 5.89M (09:00)
+>
 > Peak Calls: 145 (09:00)
 >
 > **Today Trend (0:00~18:54):**
