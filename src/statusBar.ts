@@ -371,7 +371,10 @@ export class StatusBarManager implements vscode.Disposable {
             this.statusItem.text = 'GLM: N/A';
         }
 
-        this.statusItem.color = getCombinedColor({
+        const fiveHourEstimate = fiveHourLimit ? calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime) : null;
+        const weeklyEstimate = weeklyLimit ? calculateWeeklyUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime) : null;
+        const bothSufficient = (!fiveHourEstimate || !fiveHourEstimate.willExceed) && (!weeklyEstimate || !weeklyEstimate.willExceed);
+        this.statusItem.color = bothSufficient ? '#89D185' : getCombinedColor({
             fiveHourPct,
             weeklyPct
         });
@@ -389,7 +392,6 @@ export class StatusBarManager implements vscode.Disposable {
 
         const md = new vscode.MarkdownString(undefined, true);
         md.isTrusted = true;
-        md.supportHtml = true;
 
         // 构建带套餐级别的标题
         const level = response.level;
