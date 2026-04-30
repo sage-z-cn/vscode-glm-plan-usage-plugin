@@ -519,19 +519,18 @@ export class StatusBarManager implements vscode.Disposable {
             const localizedTodayUsage = todayUsageTitle.replace(/\[([^\]]+)\]/g, '【$1】');
             md.appendMarkdown(`**【${localizedTodayUsage}】**\n\n`);
 
-            md.appendMarkdown(`- ${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n`);
-            md.appendMarkdown(`- ${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n`);
+            md.appendMarkdown(`${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n\n`);
+            md.appendMarkdown(`${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n\n`);
 
             const peakToken = this.getPeakToken(todayData);
             if (peakToken) {
-                md.appendMarkdown(`- ${vscode.l10n.t('Peak Token')}: ${formatTokens(peakToken.tokens)} (${peakToken.time})\n`);
+                md.appendMarkdown(`${vscode.l10n.t('Peak Token')}: ${formatTokens(peakToken.tokens)} (${peakToken.time})\n\n`);
             }
 
             const peakCalls = this.getPeakCalls(todayData);
             if (peakCalls) {
-                md.appendMarkdown(`- ${vscode.l10n.t('Peak Calls')}: ${peakCalls.calls} (${peakCalls.time})\n`);
+                md.appendMarkdown(`${vscode.l10n.t('Peak Calls')}: ${peakCalls.calls} (${peakCalls.time})\n\n`);
             }
-            md.appendMarkdown('\n');
 
             const sparklineResult = this.buildSparkline(todayData);
             if (sparklineResult) {
@@ -539,8 +538,7 @@ export class StatusBarManager implements vscode.Disposable {
                 const lastIdx = todayData.xTime.length - 1;
                 const endTime = this.formatSparklineTime(todayData.xTime[lastIdx], true);
                 const todayTrendTitle = vscode.l10n.t('Today Trend');
-                const localizedTodayTrend = todayTrendTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-                md.appendMarkdown(`**【${localizedTodayTrend}】(${startTime}~${endTime}):**\n\n`);
+                md.appendMarkdown(`**${todayTrendTitle}(${startTime}~${endTime}):**\n\n`);
                 md.appendMarkdown('```\n');
                 md.appendMarkdown(sparklineResult.bars);
                 md.appendMarkdown('\n```\n');
