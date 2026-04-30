@@ -419,26 +419,25 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
             const fiveHourQuotaTitle = vscode.l10n.t('5 Hour Quota');
             const localizedFiveHourQuota = fiveHourQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedFiveHourQuota}】**\n\n`);
+            md.appendMarkdown(`**【${localizedFiveHourQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
             // 添加5小时配额使用预估
             const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime);
             if (estimate) {
-                // 显示预估限额用完时间
+                const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
+                let estimateLine = `**${vscode.l10n.t('Usage Estimate')}:** ${estimate.projectedPercentage.toFixed(1)}%${overWarning}`;
                 if (estimate.timeToExhaust) {
                     if (estimate.projectedPercentage <= 100) {
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                        estimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}`;
                     } else {
                         const exhaustDate = estimate.estimatedExhaustTime
                             ? formatDateTimeOnly(estimate.estimatedExhaustTime)
                             : '';
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})\n\n`);
+                        estimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})`;
                     }
                 }
-                const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${estimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
+                md.appendMarkdown(`${estimateLine}\n\n`);
             }
         }
 
@@ -448,24 +447,24 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
             const weeklyQuotaTitle = vscode.l10n.t('Weekly Quota');
             const localizedWeeklyQuota = weeklyQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedWeeklyQuota}】**\n\n`);
+            md.appendMarkdown(`**【${localizedWeeklyQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
-            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
             const weeklyEstimate = calculateWeeklyUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime);
             if (weeklyEstimate) {
+                const overWarning = weeklyEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
+                let weeklyEstimateLine = `**${vscode.l10n.t('Usage Estimate')}:** ${weeklyEstimate.projectedPercentage.toFixed(1)}%${overWarning}`;
                 if (weeklyEstimate.timeToExhaust) {
                     if (weeklyEstimate.projectedPercentage <= 100) {
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                        weeklyEstimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}`;
                     } else {
                         const exhaustDate = weeklyEstimate.estimatedExhaustTime
                             ? formatDateTimeOnly(weeklyEstimate.estimatedExhaustTime)
                             : '';
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${weeklyEstimate.timeToExhaust} (${exhaustDate})\n\n`);
+                        weeklyEstimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${weeklyEstimate.timeToExhaust} (${exhaustDate})`;
                     }
                 }
-                const overWarning = weeklyEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${weeklyEstimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
+                md.appendMarkdown(`${weeklyEstimateLine}\n\n`);
             }
         }
 
@@ -478,7 +477,7 @@ export class StatusBarManager implements vscode.Disposable {
             const mcpBar = this.buildMarkdownBar(mcpLimit.percentage, 20);
             const mcpQuotaTitle = vscode.l10n.t('MCP Monthly Usage');
             const localizedMcpQuota = mcpQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedMcpQuota}】**\n\n`);
+            md.appendMarkdown(`**【${localizedMcpQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(mcpLimit.nextResetTime, QUOTA_TYPE_MCP)}\n\n`);
             md.appendMarkdown(`${mcpBar}\n\n`);
 
             if (mcpLimit.total !== undefined && mcpLimit.currentUsage !== undefined) {
@@ -486,22 +485,21 @@ export class StatusBarManager implements vscode.Disposable {
                 md.appendMarkdown(`**${vscode.l10n.t('Usage')}:** ${mcpLimit.currentUsage} / ${mcpLimit.total} (${vscode.l10n.t('Remaining')}: ${remaining})\n\n`);
             }
 
-            md.appendMarkdown(`**${vscode.l10n.t('Next reset')}:** ${formatResetTime(mcpLimit.nextResetTime, QUOTA_TYPE_MCP)}\n\n`);
-
             const mcpEstimate = calculateMonthlyUsageEstimate(mcpLimit.percentage, mcpLimit.nextResetTime);
             if (mcpEstimate) {
+                const overWarning = mcpEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
+                let mcpEstimateLine = `**${vscode.l10n.t('Usage Estimate')}:** ${mcpEstimate.projectedPercentage.toFixed(1)}%${overWarning}`;
                 if (mcpEstimate.timeToExhaust) {
                     if (mcpEstimate.projectedPercentage <= 100) {
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}\n\n`);
+                        mcpEstimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}`;
                     } else {
                         const exhaustDate = mcpEstimate.estimatedExhaustTime
                             ? formatDateTimeOnly(mcpEstimate.estimatedExhaustTime)
                             : '';
-                        md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${mcpEstimate.timeToExhaust} (${exhaustDate})\n\n`);
+                        mcpEstimateLine += ` | ${vscode.l10n.t('Time to exhaust')}: ${mcpEstimate.timeToExhaust} (${exhaustDate})`;
                     }
                 }
-                const overWarning = mcpEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${mcpEstimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
+                md.appendMarkdown(`${mcpEstimateLine}\n\n`);
             }
         }
 
@@ -518,18 +516,28 @@ export class StatusBarManager implements vscode.Disposable {
             const localizedTodayUsage = todayUsageTitle.replace(/\[([^\]]+)\]/g, '【$1】');
             md.appendMarkdown(`**【${localizedTodayUsage}】**\n\n`);
 
-            md.appendMarkdown(`${vscode.l10n.t('Today Tokens')}: ${formatTokens(todayData.totalTokens)}\n\n`);
-            md.appendMarkdown(`${vscode.l10n.t('Today Calls')}: ${todayData.totalCalls}\n\n`);
-
             const peakToken = this.getPeakToken(todayData);
-            if (peakToken) {
-                md.appendMarkdown(`${vscode.l10n.t('Peak Token')}: ${formatTokens(peakToken.tokens)} (${peakToken.time})\n\n`);
-            }
-
             const peakCalls = this.getPeakCalls(todayData);
-            if (peakCalls) {
-                md.appendMarkdown(`${vscode.l10n.t('Peak Calls')}: ${peakCalls.calls} (${peakCalls.time})\n\n`);
+
+            const tokenLabel = vscode.l10n.t('Today Tokens');
+            const callLabel = vscode.l10n.t('Today Calls');
+            const maxLabelLen = Math.max(tokenLabel.length, callLabel.length);
+            const tokenValue = formatTokens(todayData.totalTokens);
+            const callValue = String(todayData.totalCalls);
+            const maxValueLen = Math.max(tokenValue.length, callValue.length);
+            const pad = '\u00a0';
+
+            let tokenLine = `${tokenLabel.padEnd(maxLabelLen, pad)}: ${tokenValue.padEnd(maxValueLen, pad)}`;
+            if (peakToken) {
+                tokenLine += ` | ${vscode.l10n.t('Peak Token')}: ${formatTokens(peakToken.tokens)} (${peakToken.time})`;
             }
+            md.appendMarkdown(`${tokenLine}\n\n`);
+
+            let callLine = `${callLabel.padEnd(maxLabelLen, pad)}: ${callValue.padEnd(maxValueLen, pad)}`;
+            if (peakCalls) {
+                callLine += ` | ${vscode.l10n.t('Peak Calls')}: ${peakCalls.calls} (${peakCalls.time})`;
+            }
+            md.appendMarkdown(`${callLine}\n\n`);
 
             const sparklineResult = this.buildSparkline(todayData);
             if (sparklineResult) {
@@ -559,15 +567,23 @@ export class StatusBarManager implements vscode.Disposable {
                 const localizedSevenDayUsage = sevenDayUsageTitle.replace(/\[([^\]]+)\]/g, '【$1】');
                 md.appendMarkdown(`**【${localizedSevenDayUsage}】** ${total7DayLabel}\n\n`);
 
-                for (const day of dailyData) {
+                const formatDay = (day: { date: string; tokens: number }) => {
                     if (day.tokens === 0) {
-                        md.appendMarkdown(`${day.date}: ${vscode.l10n.t('None')}\n\n`);
+                        return `${day.date}: ${vscode.l10n.t('None')}`;
                     } else if (weeklyQuota) {
                         const pct = (day.tokens / weeklyQuota * 100).toFixed(1);
-                        md.appendMarkdown(`${day.date}: ${formatTokens(day.tokens)} (${pct}%)\n\n`);
+                        return `${day.date}: ${formatTokens(day.tokens)} (${pct}%)`;
                     } else {
-                        md.appendMarkdown(`${day.date}: ${formatTokens(day.tokens)}\n\n`);
+                        return `${day.date}: ${formatTokens(day.tokens)}`;
                     }
+                };
+
+                for (let i = 0; i < dailyData.length; i += 2) {
+                    let line = formatDay(dailyData[i]);
+                    if (i + 1 < dailyData.length) {
+                        line += ` | ${formatDay(dailyData[i + 1])}`;
+                    }
+                    md.appendMarkdown(`${line}\n\n`);
                 }
                 md.appendMarkdown('\n');
             }
