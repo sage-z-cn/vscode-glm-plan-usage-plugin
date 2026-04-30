@@ -31,6 +31,10 @@
 - 中文版本（以中文标题标识，如"悬停显示"、"功能特性"等）
 - 英文版本（以英文标题标识，如"Tooltip"、"Features"等）
 
+## Tooltip 规范
+
+- 禁止在 Tooltip 的 Markdown 中使用 HTML 标记（如 `<span>`、`<div>`、`<font>` 等），只使用标准 Markdown 语法
+
 **总结**：
 - 修改 `package.json` 相关配置 → 更新 `package.nls.json` 和 `package.nls.zh-cn.json`
 - 修改代码中的文本 → 更新 `l10n/bundle.l10n.zh-cn.json`

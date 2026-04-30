@@ -437,9 +437,8 @@ export class StatusBarManager implements vscode.Disposable {
                         md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})\n\n`);
                     }
                 }
-                const estimateColor = estimate.willExceed ? '#F44747' : (estimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${estimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${estimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
             }
         }
 
@@ -465,9 +464,8 @@ export class StatusBarManager implements vscode.Disposable {
                         md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${weeklyEstimate.timeToExhaust} (${exhaustDate})\n\n`);
                     }
                 }
-                const estimateColor = weeklyEstimate.willExceed ? '#F44747' : (weeklyEstimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = weeklyEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${weeklyEstimate.projectedPercentage.toFixed(1)}%${overWarning}</span>\n\n`);
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${weeklyEstimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
             }
         }
 
@@ -502,9 +500,8 @@ export class StatusBarManager implements vscode.Disposable {
                         md.appendMarkdown(`${vscode.l10n.t('Time to exhaust')}: ${mcpEstimate.timeToExhaust} (${exhaustDate})\n\n`);
                     }
                 }
-                const estimateColor = mcpEstimate.willExceed ? '#F44747' : (mcpEstimate.projectedPercentage > 70 ? '#CCA700' : '#89D185');
                 const overWarning = mcpEstimate.projectedPercentage > 100 ? ' ⚠️' : '';
-                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** <span style="color:${estimateColor}">${mcpEstimate.projectedPercentage.toFixed(1)}%${overWarning}</span> <span style="color:#888;font-size:0.85em">(${vscode.l10n.t('Estimated')})</span>\n\n`);
+                md.appendMarkdown(`**${vscode.l10n.t('Usage Estimate')}:** ${mcpEstimate.projectedPercentage.toFixed(1)}%${overWarning}\n\n`);
             }
         }
 
