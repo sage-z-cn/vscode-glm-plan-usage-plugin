@@ -194,7 +194,7 @@ GLM: 20% 4.2h | 21% 3.5d
 >
 > **[Weekly Quota]** Next reset: 2d 22h (04-16 Thu 17:02)
 >
-> 🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 85.0%
+> 🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨🟨⬜⬜⬜ 85.0%
 >
 > **Usage Estimate:** 128.3% ⚠️ | Time to exhaust: 1d 8h (04-14 Tue 03:15)
 >
