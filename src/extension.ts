@@ -258,18 +258,27 @@ function scheduleResetRefresh(response: UsageResponse): void {
     clearResetTimers();
 
     const now = Date.now();
+    let minDelay = Infinity;
 
     for (const limit of response.quotaLimits) {
         if (limit.nextResetTime && limit.nextResetTime > now) {
             const delay = limit.nextResetTime - now + RESET_DELAY_MS;
-            const timer = setTimeout(async () => {
-                if (await ConfigManager.hasValidConfig()) {
-                    await queryUsage(true);
-                }
-            }, delay);
-            resetTimers.push(timer);
+            if (delay < minDelay) {
+                minDelay = delay;
+            }
         }
     }
+
+    if (minDelay === Infinity) {
+        return;
+    }
+
+    const timer = setTimeout(async () => {
+        if (await ConfigManager.hasValidConfig()) {
+            await queryUsage(true);
+        }
+    }, minDelay);
+    resetTimers.push(timer);
 }
 
 /** 获取当前轮询间隔，AFK 状态下返回 -1 表示停止轮询 */
