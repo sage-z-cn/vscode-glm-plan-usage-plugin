@@ -419,8 +419,9 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(fiveHourLimit.percentage, 20);
             const fiveHourQuotaTitle = vscode.l10n.t('5 Hour Quota');
             const localizedFiveHourQuota = fiveHourQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedFiveHourQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
+            md.appendMarkdown(`**【${localizedFiveHourQuota}】**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
+            md.appendMarkdown(`${vscode.l10n.t('Next reset')}: ${formatResetTime(fiveHourLimit.nextResetTime, QUOTA_TYPE_5H)}\n\n`);
 
             // 添加5小时配额使用预估
             const estimate = calculateUsageEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime);
@@ -447,8 +448,9 @@ export class StatusBarManager implements vscode.Disposable {
             const bar = this.buildMarkdownBar(weeklyLimit.percentage, 20);
             const weeklyQuotaTitle = vscode.l10n.t('Weekly Quota');
             const localizedWeeklyQuota = weeklyQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedWeeklyQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
+            md.appendMarkdown(`**【${localizedWeeklyQuota}】**\n\n`);
             md.appendMarkdown(`${bar}\n\n`);
+            md.appendMarkdown(`${vscode.l10n.t('Next reset')}: ${formatResetTime(weeklyLimit.nextResetTime, QUOTA_TYPE_WEEKLY)}\n\n`);
 
             const weeklyEstimate = calculateWeeklyUsageEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime);
             if (weeklyEstimate) {
@@ -477,8 +479,9 @@ export class StatusBarManager implements vscode.Disposable {
             const mcpBar = this.buildMarkdownBar(mcpLimit.percentage, 20);
             const mcpQuotaTitle = vscode.l10n.t('MCP Monthly Usage');
             const localizedMcpQuota = mcpQuotaTitle.replace(/\[([^\]]+)\]/g, '【$1】');
-            md.appendMarkdown(`**【${localizedMcpQuota}】** ${vscode.l10n.t('Next reset')}: ${formatResetTime(mcpLimit.nextResetTime, QUOTA_TYPE_MCP)}\n\n`);
+            md.appendMarkdown(`**【${localizedMcpQuota}】**\n\n`);
             md.appendMarkdown(`${mcpBar}\n\n`);
+            md.appendMarkdown(`${vscode.l10n.t('Next reset')}: ${formatResetTime(mcpLimit.nextResetTime, QUOTA_TYPE_MCP)}\n\n`);
 
             if (mcpLimit.total !== undefined && mcpLimit.currentUsage !== undefined) {
                 const remaining = mcpLimit.remaining ?? (mcpLimit.total - mcpLimit.currentUsage);
@@ -578,12 +581,8 @@ export class StatusBarManager implements vscode.Disposable {
                     }
                 };
 
-                for (let i = 0; i < dailyData.length; i += 2) {
-                    let line = formatDay(dailyData[i]);
-                    if (i + 1 < dailyData.length) {
-                        line += ` | ${formatDay(dailyData[i + 1])}`;
-                    }
-                    md.appendMarkdown(`${line}\n\n`);
+                for (let i = 0; i < dailyData.length; i += 1) {
+                    md.appendMarkdown(`${formatDay(dailyData[i])}\n\n`);
                 }
                 md.appendMarkdown('\n');
             }
