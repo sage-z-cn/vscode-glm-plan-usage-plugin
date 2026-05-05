@@ -14,7 +14,7 @@
     {
       "label": "vsce: package",
       "type": "shell",
-      "command": "vsce package",
+      "command": "del *.vsix; vsce package",
       "problemMatcher": [],
       "group": {
         "kind": "build",
