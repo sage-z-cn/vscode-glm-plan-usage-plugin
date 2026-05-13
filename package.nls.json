@@ -1,4 +1,6 @@
 {
+  "viewsContainer.title": "GLM Plan Usage",
+  "views.usageStats.name": "Usage Statistics",
   "command.refresh.title": "GLM Plan Usage: Refresh Usage Statistics",
   "command.refresh.description": "Refresh current GLM plan usage and quota information",
   "command.setToken.title": "GLM Plan Usage: Set API Key",

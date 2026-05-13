@@ -27,11 +27,37 @@ export class UsageQueryService {
 
     private static getTimeWindow(): { startTime: string; endTime: string } {
         const now = new Date();
-        // 查询最近7天的数据
         const startDate = new Date(
             now.getFullYear(),
             now.getMonth(),
             now.getDate() - 6,
+            0,
+            0,
+            0,
+            0
+        );
+        const endDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999
+        );
+
+        return {
+            startTime: this.formatDateTime(startDate),
+            endTime: this.formatDateTime(endDate)
+        };
+    }
+
+    private static get30DayTimeWindow(): { startTime: string; endTime: string } {
+        const now = new Date();
+        const startDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - 29,
             0,
             0,
             0,
@@ -219,24 +245,28 @@ export class UsageQueryService {
         const { startTime, endTime } = this.getTimeWindow();
         const queryParams = `?startTime=${encodeURIComponent(startTime)}&endTime=${encodeURIComponent(endTime)}`;
 
-        const [modelUsageRaw, toolUsageRaw, quotaLimitResponse] = await Promise.all([
+        const { startTime: startTime30, endTime: endTime30 } = this.get30DayTimeWindow();
+        const queryParams30 = `?startTime=${encodeURIComponent(startTime30)}&endTime=${encodeURIComponent(endTime30)}`;
+
+        const [modelUsageRaw, toolUsageRaw, quotaLimitResponse, modelUsage30Raw] = await Promise.all([
             this.httpsGet<any>(modelUsageUrl, authToken, queryParams),
             this.httpsGet<any>(toolUsageUrl, authToken, queryParams),
             this.httpsGet<any>(quotaLimitUrl, authToken, undefined, (data) => {
-                // 在处理配额限制的同时保留原始响应中的 level 字段
                 const processedQuotaLimits = this.processQuotaLimit(data);
                 return {
                     limits: data?.data?.limits || data?.limits || [],
                     level: data?.data?.level || data?.level,
                     processedQuotaLimits
                 };
-            })
+            }),
+            this.httpsGet<any>(modelUsageUrl, authToken, queryParams30)
         ]);
 
         const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw?.modelUsage || modelUsageRaw);
         const toolUsage = this.ensureArray<ToolUsageData>(toolUsageRaw);
         const trend = this.processTrendData(modelUsageRaw);
         const activeDaysInfo = this.parseActiveDaysInfo(modelUsageRaw);
+        const monthTrend = this.processTrendData(modelUsage30Raw);
         const quotaLimits = quotaLimitResponse.processedQuotaLimits;
         const level = quotaLimitResponse.level;
 
@@ -246,6 +276,7 @@ export class UsageQueryService {
             toolUsage,
             quotaLimits,
             trend,
+            monthTrend,
             activeDaysInfo,
             level
         };

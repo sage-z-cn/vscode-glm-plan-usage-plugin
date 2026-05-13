@@ -41,6 +41,7 @@ export interface UsageResponse {
     toolUsage: ToolUsageData[];
     quotaLimits: QuotaLimitData[];
     trend?: TrendData;
+    monthTrend?: TrendData;
     activeDaysInfo?: ActiveDaysInfo;
     level?: string;
 }

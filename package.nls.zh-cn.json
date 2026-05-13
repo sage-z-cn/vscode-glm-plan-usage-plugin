@@ -1,4 +1,6 @@
 {
+  "viewsContainer.title": "GLM Plan Usage",
+  "views.usageStats.name": "使用统计",
   "command.refresh.title": "GLM Plan Usage: 刷新使用统计",
   "command.refresh.description": "刷新当前 GLM 计划的使用情况和配额信息",
   "command.setToken.title": "GLM Plan Usage: 设置 API Key",

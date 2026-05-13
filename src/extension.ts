@@ -5,11 +5,13 @@ import { ConfigManager } from './config';
 import { UsageCache } from './cache';
 import { QuotaWarningChecker } from './quotaWarning';
 import { AutoRefreshManager } from './autoRefresh';
+import { SidebarProvider } from './sidebar';
 
 const MIGRATION_KEY = 'glmPlanUsage.tokenMigrated';
 
 let statusBarManager: StatusBarManager;
 let autoRefreshManager: AutoRefreshManager;
+let sidebarProvider: SidebarProvider;
 let cache: UsageCache;
 let quotaWarningChecker: QuotaWarningChecker;
 let extensionContext: vscode.ExtensionContext;
@@ -43,6 +45,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
             const cached = cache.get();
             if (cached) {
                 statusBarManager.updateUsage(cached);
+                sidebarProvider.update(cached);
                 await quotaWarningChecker.check(cached);
                 return;
             }
@@ -51,6 +54,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
         const response = await UsageQueryService.queryUsage();
         cache.set(response);
         statusBarManager.updateUsage(response);
+        sidebarProvider.update(response);
         autoRefreshManager.scheduleResetRefresh(response);
 
         await quotaWarningChecker.check(response);
@@ -93,6 +97,11 @@ export async function activate(context: vscode.ExtensionContext) {
     statusBarManager = new StatusBarManager();
     cache = new UsageCache(context.globalState);
     quotaWarningChecker = new QuotaWarningChecker(context.globalState);
+
+    sidebarProvider = new SidebarProvider(context);
+    sidebarProvider.setRefreshCallback(async () => {
+        await queryUsage(true);
+    });
 
     autoRefreshManager = new AutoRefreshManager(
         statusBarManager,
@@ -137,6 +146,9 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(setTokenCommand);
     context.subscriptions.push(statusBarManager);
     context.subscriptions.push(autoRefreshManager);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('glmPlanUsage.usageStats', sidebarProvider)
+    );
 
     if (ConfigManager.isAFKDetectionEnabled()) {
         autoRefreshManager.initializeAFKMonitoring(context);

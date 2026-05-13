@@ -34,6 +34,24 @@
   "main": "./out/extension.js",
   "l10n": "./l10n",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "glmPlanUsage",
+          "title": "%viewsContainer.title%",
+          "icon": "assets/sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "glmPlanUsage": [
+        {
+          "id": "glmPlanUsage.usageStats",
+          "type": "webview",
+          "name": "%views.usageStats.name%"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "glmPlanUsage.setToken",
@@ -90,7 +108,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run copy-echarts && tsc -p ./",
+    "copy-echarts": "node -e \"require('fs').cpSync('src/echarts/echarts.min.js', 'out/echarts/echarts.min.js')\"",
+    "postinstall": "npm run copy-echarts",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts"
   },

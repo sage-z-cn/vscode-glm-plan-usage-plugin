@@ -18,13 +18,14 @@ function formatEstimateLine(estimate: UsageEstimateResult): string {
     const overWarning = estimate.projectedPercentage > 100 ? ' ⚠️' : '';
     let line = `**${vscode.l10n.t('Usage Estimate')}:** ${estimate.projectedPercentage.toFixed(1)}%${overWarning}`;
     if (estimate.timeToExhaust) {
+        line += '\n\n';
         if (estimate.projectedPercentage <= 100) {
-            line += ` | ${vscode.l10n.t('Time to exhaust')}: ${vscode.l10n.t('Sufficient')}`;
+            line += `**${vscode.l10n.t('Time to exhaust')}:** ${vscode.l10n.t('Sufficient')}`;
         } else {
             const exhaustDate = estimate.estimatedExhaustTime
                 ? formatDateTimeOnly(estimate.estimatedExhaustTime)
                 : '';
-            line += ` | ${vscode.l10n.t('Time to exhaust')}: ${estimate.timeToExhaust} (${exhaustDate})`;
+            line += `**${vscode.l10n.t('Time to exhaust')}:** ${estimate.timeToExhaust} (${exhaustDate})`;
         }
     }
     return line;
@@ -45,7 +46,7 @@ export function buildTooltip(response: UsageResponse): vscode.MarkdownString {
     let titleKey: string;
 
     if (level) {
-        const levelText = level.charAt(0).toUpperCase() + level.slice(1);
+        const levelText = level.toUpperCase();
         titleKey = `[${levelText}] GLM Coding Plan Usage`;
     } else {
         titleKey = 'GLM Coding Plan Usage';
@@ -112,66 +113,6 @@ export function buildTooltip(response: UsageResponse): vscode.MarkdownString {
         md.appendMarkdown(`**${vscode.l10n.t('Quota Usage')}:** N/A\n\n`);
     }
 
-    if (response.trend) {
-        const todayData = filterTodayData(response.trend);
-
-        md.appendMarkdown(`---\n\n`);
-        const todayUsageTitle = localizedBrackets(vscode.l10n.t('Today Usage'));
-        md.appendMarkdown(`**【${todayUsageTitle}】**\n\n`);
-
-        const peakToken = getPeakToken(todayData);
-        const peakCalls = getPeakCalls(todayData);
-
-        const tokenValue = formatTokens(todayData.totalTokens);
-        const callValue = String(todayData.totalCalls);
-
-        let tokenLine = `**${vscode.l10n.t('Tokens')}:** ${tokenValue}`;
-        if (peakToken) {
-            tokenLine += ` | ${vscode.l10n.t('Peak')} ${formatTokens(peakToken.tokens)}@${peakToken.time}`;
-        }
-        md.appendMarkdown(`${tokenLine}\n\n`);
-
-        let callLine = `**${vscode.l10n.t('Calls')}:** ${callValue}`;
-        if (peakCalls) {
-            callLine += ` | ${vscode.l10n.t('Peak')} ${peakCalls.calls}@${peakCalls.time}`;
-        }
-        md.appendMarkdown(`${callLine}\n\n`);
-
-        const sparklineResult = buildSparkline(todayData);
-        if (sparklineResult) {
-            const startTime = formatSparklineTime(todayData.xTime[sparklineResult.startIndex]);
-            const lastIdx = todayData.xTime.length - 1;
-            const endTime = formatSparklineTime(todayData.xTime[lastIdx], true);
-            md.appendMarkdown(`**${startTime}~${endTime}:**\n\n`);
-            md.appendMarkdown('```\n');
-            md.appendMarkdown(sparklineResult.bars);
-            md.appendMarkdown('\n```\n');
-        }
-    }
-
-    if (response.trend) {
-        const dailyData = aggregateDailyData(response.trend);
-        if (dailyData.length > 0) {
-            md.appendMarkdown(`---\n\n`);
-            const total7DayTokens = dailyData.reduce((sum, d) => sum + d.tokens, 0);
-            const sevenDayUsageTitle = localizedBrackets(vscode.l10n.t('7-Day Usage'));
-            md.appendMarkdown(`**【${sevenDayUsageTitle}】** ${formatTokens(total7DayTokens)}\n\n`);
-
-            const formatDay = (day: { date: string; tokens: number }) => {
-                if (day.tokens === 0) {
-                    return `${day.date}: ${vscode.l10n.t('None')}`;
-                } else {
-                    return `${day.date}: ${formatTokens(day.tokens)}`;
-                }
-            };
-
-            for (let i = 0; i < dailyData.length; i += 1) {
-                md.appendMarkdown(`${formatDay(dailyData[i])}\n\n`);
-            }
-            md.appendMarkdown('\n');
-        }
-    }
-
     md.appendMarkdown(`\n---\n\n`);
     md.appendMarkdown(`[$(gear) ${vscode.l10n.t('Settings')}](command:workbench.action.openSettings?%22glmPlanUsage%22 "${vscode.l10n.t('Settings')}")`);
     md.appendMarkdown('\u00a0|\u00a0');
@@ -182,7 +123,7 @@ export function buildTooltip(response: UsageResponse): vscode.MarkdownString {
     return md;
 }
 
-function filterTodayData(trend: TrendData): {
+export function filterTodayData(trend: TrendData): {
     totalTokens: number;
     totalCalls: number;
     xTime: string[];
@@ -219,7 +160,7 @@ function filterTodayData(trend: TrendData): {
     return { totalTokens, totalCalls, xTime: todayXTime, yValue: todayYValue, modelCallCount: todayModelCallCount };
 }
 
-function aggregateDailyData(trend: TrendData): { date: string; tokens: number }[] {
+export function aggregateDailyData(trend: TrendData): { date: string; tokens: number }[] {
     const dayMap = new Map<string, number>();
 
     for (let i = 0; i < trend.xTime.length; i++) {
@@ -239,25 +180,27 @@ function aggregateDailyData(trend: TrendData): { date: string; tokens: number }[
             const dd = parts[2];
             const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
             const weekday = getWeekdayName(d);
-            return { date: `${mm}-${dd} ${weekday}`, tokens };
+            return { date: `${mm}-${dd}\n${weekday}`, tokens };
         });
 
     return sorted;
 }
 
-function getPeakToken(trend: TrendSlice): { tokens: number; time: string } | null {
+export function getPeakToken(trend: TrendSlice): { tokens: number; time: string; index: number } | null {
     if (!trend.xTime || !trend.yValue || trend.yValue.length === 0) {
         return null;
     }
 
     let peakTokens = 0;
     let peakTime = '';
+    let peakIndex = -1;
 
     for (let i = 0; i < trend.yValue.length; i++) {
         const val = trend.yValue[i];
         if (val !== null && val !== undefined && val > peakTokens) {
             peakTokens = val;
             peakTime = trend.xTime[i];
+            peakIndex = i;
         }
     }
 
@@ -266,10 +209,10 @@ function getPeakToken(trend: TrendSlice): { tokens: number; time: string } | nul
         peakTime = parts.length >= 2 ? parts[1] : peakTime;
     }
 
-    return peakTokens > 0 ? { tokens: peakTokens, time: peakTime } : null;
+    return peakTokens > 0 ? { tokens: peakTokens, time: peakTime, index: peakIndex } : null;
 }
 
-function getPeakCalls(trend: TrendSlice): { calls: number; time: string } | null {
+export function getPeakCalls(trend: TrendSlice): { calls: number; time: string } | null {
     if (!trend.xTime || !trend.modelCallCount || trend.modelCallCount.length === 0) {
         return null;
     }
