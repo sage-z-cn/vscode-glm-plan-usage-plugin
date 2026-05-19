@@ -1,4 +1,6 @@
 {
+  "displayName": "智谱 Coding Plan 用量统计",
+  "description": "查询智谱 GLM Coding Plan 服务的配额和使用统计",
   "viewsContainer.title": "GLM Coding Plan Usage",
   "views.usageStats.name": "使用统计",
   "command.refresh.title": "GLM Coding Plan Usage: 刷新使用统计",

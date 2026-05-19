@@ -1,4 +1,6 @@
 {
+  "displayName": "GLM Coding Plan Usage",
+  "description": "Query quota and usage statistics for GLM Coding Plan service",
   "viewsContainer.title": "GLM Coding Plan Usage",
   "views.usageStats.name": "Usage Statistics",
   "command.refresh.title": "GLM Coding Plan Usage: Refresh Usage Statistics",
