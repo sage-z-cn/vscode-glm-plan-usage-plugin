@@ -13,3 +13,5 @@ tsconfig.json
 screenshots
 AGENTS.md
 pnpm-lock.yaml
+.omo
+scripts
