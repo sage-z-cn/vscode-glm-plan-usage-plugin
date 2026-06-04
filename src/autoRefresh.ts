@@ -9,13 +9,14 @@ import { QuotaWarningChecker } from './quotaWarning';
 import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './constants';
 
 const RESET_DELAY_MS = 10_000;
-const MIN_RESET_SCHEDULE_MS = 60_000;
+const RESET_COOLDOWN_MS = 300_000;
 
 type ResetTimerEntry = { timer: NodeJS.Timeout; types: string[] };
 
 export class AutoRefreshManager implements vscode.Disposable {
     private autoRefreshTimer: NodeJS.Timeout | undefined;
     private resetTimers: ResetTimerEntry[] = [];
+    private lastResetFireTime = 0;
     private activityMonitor: ActivityMonitor | undefined;
     private previousState: UserActivityState = UserActivityState.ACTIVE;
     private isRefreshing = false;
@@ -51,6 +52,10 @@ export class AutoRefreshManager implements vscode.Disposable {
     scheduleResetRefresh(response: UsageResponse): void {
         this.clearResetTimers();
 
+        if (Date.now() - this.lastResetFireTime < RESET_COOLDOWN_MS) {
+            return;
+        }
+
         const now = Date.now();
         const resetTypes = new Map<number, string[]>();
 
@@ -67,8 +72,8 @@ export class AutoRefreshManager implements vscode.Disposable {
 
         for (const [resetTime, types] of resetTypes) {
             const delay = resetTime - now + RESET_DELAY_MS;
-            if (delay < MIN_RESET_SCHEDULE_MS) { continue; }
             const timer = setTimeout(async () => {
+                this.lastResetFireTime = Date.now();
                 if (await ConfigManager.hasValidConfig()) {
                     await this.queryUsage(true);
                     if (ConfigManager.isResetNotificationEnabled()) {
