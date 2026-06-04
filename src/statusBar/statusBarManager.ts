@@ -89,7 +89,7 @@ export class StatusBarManager implements vscode.Disposable {
 
         const fiveHourEstimate = fiveHourLimit ? calculate5HourEstimate(fiveHourLimit.percentage, fiveHourLimit.nextResetTime) : null;
         const weeklyEstimate = weeklyLimit ? calculateWeeklyEstimate(weeklyLimit.percentage, weeklyLimit.nextResetTime) : null;
-        const bothSufficient = (!fiveHourEstimate || !fiveHourEstimate.willExceed) && (!weeklyEstimate || !weeklyEstimate.willExceed);
+        const bothSufficient = fiveHourPct! < 70 && weeklyPct! < 70 && (!fiveHourEstimate || !fiveHourEstimate.willExceed) && (!weeklyEstimate || !weeklyEstimate.willExceed);
         this.statusItem.color = bothSufficient ? '#89D185' : getCombinedColor({
             fiveHourPct,
             weeklyPct
