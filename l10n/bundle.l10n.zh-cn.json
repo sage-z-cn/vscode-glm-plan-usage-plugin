@@ -20,7 +20,7 @@
   "Current": "当前使用",
   "Total": "总量",
   "Unknown error": "未知错误",
-  "Request timeout after 30 seconds": "请求超时（30秒）",
+  "Request timeout after 60 seconds": "请求超时（60秒）",
   "Authentication failed (HTTP 401). Please check your API Key.": "认证失败（HTTP 401）。请检查你的 API Key。",
   "Access denied (HTTP 403). Please check your API Key permissions.": "访问被拒绝（HTTP 403）。请检查你的 API Key 权限。",
   "Rate limit exceeded (HTTP 429). Please try again later.": "请求频率超限（HTTP 429）。请稍后重试。",
@@ -77,5 +77,6 @@
   "MCP Monthly Usage": "MCP每月用量",
   "Usage": "用量",
   "Remaining": "剩余",
-  "Estimated": "预估"
+  "Estimated": "预估",
+  "Loading...": "加载中..."
 }

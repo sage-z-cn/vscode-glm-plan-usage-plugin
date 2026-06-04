@@ -193,6 +193,18 @@ export class UsageQueryService {
 
             console.log(`[GPU] Request: GET ${parsedUrl.hostname}${fullPath}`);
 
+            let settled = false;
+            const reqStartTime = Date.now();
+
+            const timeoutId = setTimeout(() => {
+                if (settled) { return; }
+                settled = true;
+                req.destroy();
+                const elapsed = Date.now() - reqStartTime;
+                console.error(`[GPU] Request timeout for ${parsedUrl.hostname}${fullPath} (elapsed ${elapsed}ms / 60000ms)`);
+                reject(new Error(vscode.l10n.t('Request timeout after 60 seconds')));
+            }, 60000);
+
             const req = https.request(options, (res) => {
                 let data = '';
 
@@ -201,6 +213,10 @@ export class UsageQueryService {
                 });
 
                 res.on('end', () => {
+                    if (settled) { return; }
+                    settled = true;
+                    clearTimeout(timeoutId);
+
                     const statusCode = res.statusCode ?? 0;
                     console.log(`[GPU] Response: ${statusCode} from ${parsedUrl.hostname}${parsedUrl.pathname}`);
 
@@ -239,15 +255,11 @@ export class UsageQueryService {
             });
 
             req.on('error', (error) => {
-                console.error(`[GPU] Request error:`, error);
+                if (settled) { return; }
+                settled = true;
+                clearTimeout(timeoutId);
+                console.error(`[GPU] Request error (elapsed ${Date.now() - reqStartTime}ms):`, error);
                 reject(error);
-            });
-
-            // 设置30秒超时
-            req.setTimeout(30000, () => {
-                req.destroy();
-                console.error(`[GPU] Request timeout for ${parsedUrl.hostname}${fullPath}`);
-                reject(new Error(vscode.l10n.t('Request timeout after 30 seconds')));
             });
 
             req.end();

@@ -91,6 +91,7 @@ export interface SidebarLocales {
     updated: string;
     total: string;
     refresh: string;
+    loading: string;
     tooltipTokens: string;
     nextReset: string;
     usage: string;
@@ -290,6 +291,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
             updated: vscode.l10n.t('Updated'),
             total: vscode.l10n.t('Total'),
             refresh: vscode.l10n.t('Refresh'),
+            loading: vscode.l10n.t('Loading...'),
             tooltipTokens: vscode.l10n.t('Tokens'),
             nextReset: vscode.l10n.t('Next reset'),
             usage: vscode.l10n.t('Usage'),

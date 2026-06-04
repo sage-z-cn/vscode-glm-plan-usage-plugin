@@ -45,6 +45,7 @@ localResourceRoots: [
                 if (msg.command === 'ready') {
                     this.flushPending();
                 } else if (msg.command === 'refresh' && this._refreshCallback) {
+                    this._view?.webview.postMessage({ command: 'loading' });
                     await this._refreshCallback();
                 } else if (msg.command === 'saveRange') {
                     this._context.globalState.update('glmPlanUsage.dayRange', msg.value);

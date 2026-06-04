@@ -17,6 +17,7 @@ body {
   color: var(--vscode-editor-foreground);
   background: var(--vscode-editor-background);
   user-select: none;
+  position: relative;
 }
 .header {
   display: flex;
@@ -43,7 +44,25 @@ body {
   margin-bottom: 8px;
   color: var(--vscode-textLink-foreground);
   display: flex;
+  flex-direction: column;
+}
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
+  gap: 8px;
+}
+.section-stats-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.section-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .quota-item {
   margin-bottom: 10px;
@@ -105,7 +124,6 @@ body {
 .stat-suffix {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
-  margin-left: 8px;
   font-weight: 600;
 }
 .no-data {
@@ -135,7 +153,6 @@ body {
   background: var(--vscode-toolbar-activeBackground);
 }
 .radio-link-group {
-  margin-left: 8px;
   display: inline-flex;
   border: 1px solid var(--vscode-panel-border);
   border-radius: 4px;
@@ -200,9 +217,43 @@ body {
   color: var(--vscode-errorForeground);
   margin-bottom: 12px;
 }
+.loading-overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(var(--vscode-editor-background-rgb, 30,30,30), 0.6);
+  z-index: 10;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+.loading-overlay.show { display: flex; }
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--vscode-panel-border);
+  border-top-color: var(--vscode-textLink-foreground);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
 </style>
 </head>
 <body>
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Loading...</div>
+</div>
 <div class="header">
   <span class="title" id="header-title">GLM Coding Plan Usage</span>
   <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()">&#x21bb;</button>
@@ -220,27 +271,37 @@ body {
 
 <div class="section" id="today-section" style="display:none">
   <div class="section-title">
-    <span id="today-section-title"></span>
-    <span class="radio-link-group" id="today-metric-select">
-      <span id="today-metric-tokens" class="radio-link active" data-value="tokens">Tokens</span>
-      <span id="today-metric-calls" class="radio-link" data-value="calls">Calls</span>
-    </span>
-    <span class="stat-suffix" id="today-tokens-wrap"><span id="today-tokens-label"></span>: <span id="today-tokens">--</span></span>
-    <span class="stat-suffix" id="today-calls-wrap"><span id="today-calls-label"></span>: <span id="today-calls">--</span></span>
+    <div class="section-title-row">
+      <span id="today-section-title"></span>
+      <span class="radio-link-group" id="today-metric-select">
+        <span id="today-metric-tokens" class="radio-link active" data-value="tokens">Tokens</span>
+        <span id="today-metric-calls" class="radio-link" data-value="calls">Calls</span>
+      </span>
+    </div>
+    <div class="section-stats-row">
+      <span class="stat-suffix" id="today-tokens-wrap"><span id="today-tokens-label"></span>: <span id="today-tokens">--</span></span>
+      <span class="stat-suffix" id="today-calls-wrap"><span id="today-calls-label"></span>: <span id="today-calls">--</span></span>
+    </div>
   </div>
   <div id="today-chart" class="chart-container"></div>
 </div>
 
 <div class="section" id="week-section" style="display:none">
   <div class="section-title">
-    <span id="week-section-title"></span>
-    <span class="radio-link-group" id="day-range-select"></span>
-    <span class="radio-link-group" id="week-metric-select">
-      <span id="week-metric-tokens" class="radio-link active" data-value="tokens">Tokens</span>
-      <span id="week-metric-calls" class="radio-link" data-value="calls">Calls</span>
-    </span>
-    <span class="stat-suffix" id="week-total"></span>
-    <span class="stat-suffix" id="week-total-calls"></span>
+    <div class="section-title-row">
+      <span id="week-section-title"></span>
+      <span class="section-title-actions">
+        <span class="radio-link-group" id="day-range-select"></span>
+        <span class="radio-link-group" id="week-metric-select">
+          <span id="week-metric-tokens" class="radio-link active" data-value="tokens">Tokens</span>
+          <span id="week-metric-calls" class="radio-link" data-value="calls">Calls</span>
+        </span>
+      </span>
+    </div>
+    <div class="section-stats-row">
+      <span class="stat-suffix" id="week-total"></span>
+      <span class="stat-suffix" id="week-total-calls"></span>
+    </div>
   </div>
   <div id="week-chart" class="chart-container" style="height:200px"></div>
 </div>
@@ -268,6 +329,18 @@ body {
   let storedData = null;
   let currentRange = '7';
   let currentMetric = 'tokens';
+
+  function showLoading(text) {
+    var overlay = document.getElementById('loading-overlay');
+    var label = document.getElementById('loading-text');
+    if (label) label.textContent = text || 'Loading...';
+    if (overlay) overlay.classList.add('show');
+  }
+
+  function hideLoading() {
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('show');
+  }
 
   function isDark() {
     return document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast');
@@ -428,7 +501,6 @@ body {
               } else {
                 result += '--';
               }
-              result += ' ' + (loc.tooltipTokens || 'Tokens');
               // Call value — only for Total
               if (isTotal) {
                 result += ', ';
@@ -581,7 +653,6 @@ body {
             } else {
               result += '--';
             }
-            result += ' ' + (loc.tooltipTokens || 'Tokens');
             // Call value — only for Total
             if (isTotal) {
               result += ', ';
@@ -745,6 +816,7 @@ body {
   addMetricToggleHandler('week-metric-select');
 
   window.doRefresh = function() {
+    showLoading(loc.loading || 'Loading...');
     vscodeApi.postMessage({ command: 'refresh' });
   };
 
@@ -771,6 +843,7 @@ body {
   window.addEventListener('message', function(event) {
     var msg = event.data;
     if (msg && msg.command === 'updateData') {
+      hideLoading();
       document.getElementById('error-section').style.display = 'none';
       document.getElementById('quota-section').style.display = '';
       document.getElementById('today-section').style.display = '';
@@ -780,12 +853,15 @@ body {
       }
       updateUI(msg.data);
     } else if (msg && msg.command === 'showError') {
+      hideLoading();
       document.getElementById('error-section').style.display = '';
       document.getElementById('quota-section').style.display = 'none';
       document.getElementById('today-section').style.display = 'none';
       document.getElementById('week-section').style.display = 'none';
       document.getElementById('no-data').style.display = 'none';
       document.getElementById('error-message').textContent = msg.error;
+    } else if (msg && msg.command === 'loading') {
+      showLoading(loc.loading || 'Loading...');
     }
   });
 
