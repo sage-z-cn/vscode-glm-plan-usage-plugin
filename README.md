@@ -39,6 +39,7 @@
 | `glmPlanUsage.autoRefresh` | 启动时自动刷新 | `true` |
 | `glmPlanUsage.refreshInterval` | 自动刷新间隔（秒），`0` 为禁用 | `300` |
 | `glmPlanUsage.enableRetry` | 请求失败时自动重试（最多3次） | `true` |
+| `glmPlanUsage.showQuotaRate` | 侧边栏显示配额消耗速率图表 | `true` |
 
 #### 安全存储说明
 
@@ -106,6 +107,7 @@ Configure in settings (`Ctrl+,`):
 | `glmPlanUsage.autoRefresh` | Auto refresh on startup | `true` |
 | `glmPlanUsage.refreshInterval` | Auto refresh interval (seconds), `0` to disable | `300` |
 | `glmPlanUsage.enableRetry` | Automatically retry on request failure (up to 3 retries) | `true` |
+| `glmPlanUsage.showQuotaRate` | Show quota consumption rate chart in sidebar | `true` |
 
 #### Secure Storage
 

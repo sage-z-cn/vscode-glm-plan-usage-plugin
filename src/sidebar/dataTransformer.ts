@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse } from '../types';
+import { UsageResponse, HourlyQuotaStats, DailyQuotaStats } from '../types';
 import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from '../constants';
 import { formatTokens, formatResetTime, formatDateTimeOnly } from '../statusBar/formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate, calculateMonthlyEstimate } from '../statusBar/usageEstimate';
@@ -100,6 +100,24 @@ export interface SidebarLocales {
     last30Days: string;
     settings: string;
     configureApiKey: string;
+    quotaConsumptionRate: string;
+    fiveHourDeltaLabel: string;
+    weeklyDeltaLabel: string;
+    quotaResetDetected: string;
+    dataGap: string;
+    noDataAvailable: string;
+    pp: string;
+    todayLabel: string;
+    weekLabel: string;
+    dailyDeltaLabel: string;
+    weeklyQuota: string;
+    Sun: string;
+    Mon: string;
+    Tue: string;
+    Wed: string;
+    Thu: string;
+    Fri: string;
+    Sat: string;
 }
 
 export interface SidebarData {
@@ -110,9 +128,11 @@ export interface SidebarData {
     today: TodayData | null;
     week: DailyData | null;
     month: DailyData | null;
+    hourlyQuota: HourlyQuotaStats[];
+    weeklyQuota: DailyQuotaStats[];
 }
 
-export function transformResponse(response: UsageResponse): SidebarData {
+export function transformResponse(response: UsageResponse, hourlyQuotaStats?: HourlyQuotaStats[], weeklyQuotaStats?: DailyQuotaStats[]): SidebarData {
     const now = new Date();
 
     const quotas: QuotaItem[] = [];
@@ -300,10 +320,30 @@ export function transformResponse(response: UsageResponse): SidebarData {
             last30Days: vscode.l10n.t('Last 30 Days'),
             settings: vscode.l10n.t('Settings'),
             configureApiKey: vscode.l10n.t('Configure API Key'),
+            quotaConsumptionRate: vscode.l10n.t('Quota Consumption Rate'),
+            fiveHourDeltaLabel: vscode.l10n.t('5h Δ/h'),
+            weeklyDeltaLabel: vscode.l10n.t('Weekly Δ/h'),
+            quotaResetDetected: vscode.l10n.t('Quota reset detected'),
+            dataGap: vscode.l10n.t('Data gap ({0}h)'),
+            noDataAvailable: vscode.l10n.t('No data available'),
+            pp: vscode.l10n.t('pp'),
+            todayLabel: vscode.l10n.t('Today'),
+            weekLabel: vscode.l10n.t('7 Days'),
+            dailyDeltaLabel: vscode.l10n.t('Weekly Δ/d'),
+            weeklyQuota: vscode.l10n.t('Weekly Quota'),
+            Sun: vscode.l10n.t('Sun'),
+            Mon: vscode.l10n.t('Mon'),
+            Tue: vscode.l10n.t('Tue'),
+            Wed: vscode.l10n.t('Wed'),
+            Thu: vscode.l10n.t('Thu'),
+            Fri: vscode.l10n.t('Fri'),
+            Sat: vscode.l10n.t('Sat'),
         },
         quotas,
         today,
         week,
-        month
+        month,
+        hourlyQuota: hourlyQuotaStats || [],
+        weeklyQuota: weeklyQuotaStats || []
     };
 }

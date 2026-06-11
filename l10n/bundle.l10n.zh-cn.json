@@ -79,5 +79,14 @@
   "Remaining": "剩余",
   "Estimated": "预估",
   "Loading...": "加载中...",
-  "{0} has been reset": "{0}已刷新"
+  "{0} has been reset": "{0}已刷新",
+  "Quota Consumption Rate": "配额消耗速率",
+  "5h Δ/h": "5h增量/时",
+  "Weekly Δ/h": "周增量/时",
+  "Quota reset detected": "检测到配额重置",
+  "Data gap ({0}h)": "数据间隙({0}小时)",
+  "pp": "百分点",
+  "Today": "当天",
+  "7 Days": "七天",
+  "Weekly Δ/d": "周增量/天"
 }

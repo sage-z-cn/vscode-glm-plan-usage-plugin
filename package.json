@@ -112,6 +112,11 @@
           "type": "boolean",
           "default": true,
           "description": "%configuration.resetNotification.description%"
+        },
+        "glmPlanUsage.showQuotaRate": {
+          "type": "boolean",
+          "default": true,
+          "description": "%configuration.showQuotaRate.description%"
         }
       }
     }

@@ -102,6 +102,12 @@ export class ConfigManager {
         return config.get<boolean>('resetNotification') ?? true;
     }
 
+    /** 是否显示配额消耗速率图表（默认开启） */
+    static isShowQuotaRateEnabled(): boolean {
+        const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+        return config.get<boolean>('showQuotaRate') ?? true;
+    }
+
     static async validateConfig(): Promise<{ valid: boolean; error?: string }> {
         const authToken = await this.getAuthToken();
         const baseUrl = this.getBaseUrl();

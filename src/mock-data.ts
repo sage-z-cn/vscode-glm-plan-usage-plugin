@@ -5,7 +5,7 @@
  * for taking screenshots.
  */
 
-import { UsageResponse, TrendData, ModelTrendData, QuotaLimitData } from './types';
+import { UsageResponse, TrendData, ModelTrendData, QuotaLimitData, HourlyQuotaStats, DailyQuotaStats } from './types';
 
 // Current time for realistic timestamps
 const now = new Date();
@@ -315,3 +315,89 @@ export {
     generateDailyTimestamps,
     MODELS
 };
+
+/** 生成 mock 小时配额消耗统计数据（用于截图） */
+export function generateMockHourlyQuotaStats(): HourlyQuotaStats[] {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const currentHour = now.getHours();
+
+    const stats: HourlyQuotaStats[] = [];
+    // 模拟 5h 配额从 5% 逐渐增长到 65%，周配额从 2% 增长到 18%
+    let fiveHourRunning = 5;
+    let weeklyRunning = 2;
+
+    for (let h = 0; h <= currentHour; h++) {
+        const hourKey = `${y}-${m}-${d} ${String(h).padStart(2, '0')}`;
+        const hour = `${String(h).padStart(2, '0')}:00`;
+
+        // 模拟某些小时的 AFK 间隙（如 3-4 时）
+        const isAfk = (h === 3 || h === 4);
+
+        if (isAfk) {
+            stats.push({
+                hour, hourKey,
+                fiveHourPct: null, weeklyPct: null,
+                fiveHourDelta: null, weeklyDelta: null,
+                isReset: false, hasGap: false
+            });
+            continue;
+        }
+
+        // 正常使用小时：5h 增量 5-25pp，周增量 0.2-1.5pp
+        const fiveDelta = 3 + Math.random() * 22;
+        const weekDelta = 0.1 + Math.random() * 1.4;
+
+        fiveHourRunning += fiveDelta;
+        weeklyRunning += weekDelta;
+
+        const hasGap = (h === 5); // 第 5 小时是 AFK 恢复后的第一个数据点
+        const gapDuration = hasGap ? 2 : undefined;
+
+        stats.push({
+            hour, hourKey,
+            fiveHourPct: Math.min(fiveHourRunning, 100),
+            weeklyPct: Math.min(weeklyRunning, 100),
+            fiveHourDelta: Math.round(fiveDelta * 10) / 10,
+            weeklyDelta: Math.round(weekDelta * 100) / 100,
+            isReset: false,
+            hasGap,
+            gapDuration,
+        });
+    }
+
+    return stats;
+}
+
+/** 生成 mock 过去七天周配额每日消耗数据（用于截图） */
+export function generateMockWeeklyDailyStats(): DailyQuotaStats[] {
+    const now = new Date();
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const result: DailyQuotaStats[] = [];
+    let weeklyPct = 8;
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateKey = `${d.getFullYear()}-${m}-${day}`;
+
+        const dailyDelta = 8 + Math.random() * 18;
+        weeklyPct += dailyDelta;
+        weeklyPct = Math.min(weeklyPct, 100);
+
+        result.push({
+            date: `${m}-${day}`,
+            dateKey,
+            weeklyPct: Math.round(weeklyPct * 10) / 10,
+            weeklyDelta: Math.round(dailyDelta * 10) / 10,
+            weekday: weekdays[d.getDay()],
+            isToday: i === 0,
+        });
+    }
+
+    return result;
+}

@@ -269,6 +269,25 @@ body {
 
 <div class="section" id="quota-section"></div>
 
+<div class="section" id="quota-rate-section" style="display:none">
+  <div class="section-title">
+    <div class="section-title-row">
+      <span id="quota-rate-section-title"></span>
+      <span class="section-title-actions">
+        <span class="radio-link-group" id="quota-rate-metric-select">
+          <span id="quota-rate-metric-5h" class="radio-link active" data-value="5h">5h</span>
+          <span id="quota-rate-metric-weekly" class="radio-link" data-value="weekly">周</span>
+        </span>
+        <span class="radio-link-group" id="quota-rate-day-toggle">
+          <span class="radio-link active" data-value="today">当天</span>
+          <span id="quota-rate-day-week" class="radio-link" data-value="week">七天</span>
+        </span>
+      </span>
+    </div>
+  </div>
+  <div id="quota-rate-chart" class="chart-container" style="height:190px"></div>
+</div>
+
 <div class="section" id="today-section" style="display:none">
   <div class="section-title">
     <div class="section-title-row">
@@ -325,10 +344,15 @@ body {
   const vscodeApi = acquireVsCodeApi();
   let todayChart = null;
   let weekChart = null;
+  let quotaChart = null;
   let loc = {};
   let storedData = null;
   let currentRange = '7';
   let currentMetric = 'tokens';
+  let currentQuotaRate = '5h';
+  let currentQuotaDayRange = 'today';
+  let quotaData = [];
+  let weeklyQuotaData = [];
 
   function showLoading(text) {
     var overlay = document.getElementById('loading-overlay');
@@ -670,6 +694,179 @@ body {
     });
   }
 
+  function initQuotaChart(hourlyData, weeklyData, dayRange, metric) {
+    try {
+      const dom = document.getElementById('quota-rate-chart');
+      if (!dom) return;
+      if (quotaChart) quotaChart.dispose();
+      quotaChart = echarts.init(dom);
+      const c = chartColors();
+
+      // Set title and toggle labels
+      var rateTitle = document.getElementById('quota-rate-section-title');
+      if (rateTitle) rateTitle.textContent = loc.quotaConsumptionRate || 'Quota Consumption Rate';
+      var rate5hBtn = document.getElementById('quota-rate-metric-5h');
+      var rateWeeklyBtn = document.getElementById('quota-rate-metric-weekly');
+      if (rate5hBtn) rate5hBtn.textContent = loc.fiveHourDeltaLabel || '5h Δ';
+      if (rateWeeklyBtn) rateWeeklyBtn.textContent = loc.weeklyDeltaLabel || '周 Δ';
+      var dayTodayBtn = document.getElementById('quota-rate-day-today');
+      var dayWeekBtn = document.getElementById('quota-rate-day-week');
+      if (dayTodayBtn) dayTodayBtn.textContent = loc.todayLabel || 'Today';
+      if (dayWeekBtn) dayWeekBtn.textContent = loc.weekLabel || '7 Days';
+
+      syncQuotaRateDayToggleUI();
+      syncQuotaRateToggleUI();
+
+      // Show/hide metric toggle based on day range
+      var metricSelectEl = document.getElementById('quota-rate-metric-select');
+      if (metricSelectEl) {
+        metricSelectEl.style.display = dayRange === 'today' ? '' : 'none';
+      }
+
+      const isToday = dayRange === 'today';
+
+      if (isToday) {
+        // ---- Today (hourly) chart ----
+        if (!hourlyData || hourlyData.length === 0) return;
+        renderHourlyChart(hourlyData, metric, c);
+      } else {
+        // ---- Week (daily) chart ----
+        if (!weeklyData || weeklyData.length === 0) return;
+        renderWeeklyChart(weeklyData, c);
+      }
+    } catch(e) {
+      console.error('initQuotaChart error:', e);
+    }
+  }
+
+  function renderHourlyChart(data, metric, c) {
+    const xData = data.map(function(d) { return d.hour; });
+    const is5h = metric === '5h';
+    const seriesData = is5h
+      ? data.map(function(d) { return d.fiveHourDelta; })
+      : data.map(function(d) { return d.weeklyDelta; });
+    const seriesColor = is5h ? '#5B9BD5' : '#89D185';
+    const barWidth = is5h ? 22 : 14;
+    const seriesName = is5h
+      ? (loc.fiveHourDeltaLabel || '5h')
+      : (loc.weeklyDeltaLabel || '周');
+
+    // Build gap background areas
+    var gapMarkAreas = [];
+    var inGap = false;
+    var gapStart = -1;
+    for (var gi = 0; gi < data.length; gi++) {
+      if (data[gi].fiveHourPct === null) {
+        if (!inGap) { inGap = true; gapStart = gi; }
+      } else {
+        if (inGap) {
+          gapMarkAreas.push([{ xAxis: gapStart }, { xAxis: gi - 1 }]);
+          inGap = false;
+        }
+      }
+    }
+    if (inGap) {
+      gapMarkAreas.push([{ xAxis: gapStart }, { xAxis: data.length - 1 }]);
+    }
+
+    quotaChart.setOption({
+      grid: { top: 20, right: 8, bottom: 32, left: 8 },
+      xAxis: {
+        type: 'category', data: xData, boundaryGap: true,
+        axisLabel: { fontSize: 9, color: c.text, interval: 0, rotate: 45 },
+        axisLine: { lineStyle: { color: c.grid } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 9, color: c.text },
+        splitLine: { lineStyle: { color: c.grid } },
+        min: 0
+      },
+      series: [{
+        name: seriesName, type: 'bar', data: seriesData,
+        itemStyle: { color: seriesColor, borderRadius: [3, 3, 0, 0] },
+        barMaxWidth: barWidth,
+        markArea: gapMarkAreas.length > 0 ? {
+          silent: true, data: gapMarkAreas,
+          itemStyle: { color: 'rgba(128,128,128,0.08)' }
+        } : undefined
+      }],
+      tooltip: {
+        trigger: 'axis', textStyle: { fontSize: 10 },
+        formatter: function(params) {
+          if (!params || params.length === 0) return '';
+          var idx = params[0].dataIndex;
+          var d = data[idx];
+          var result = d.hour;
+          if (d.isReset) {
+            result += '<br/>' + (loc.quotaResetDetected || '🔄 Quota reset detected');
+            return result;
+          }
+          var val = is5h ? d.fiveHourDelta : d.weeklyDelta;
+          var hasData = val !== null && val !== undefined;
+          if (hasData) {
+            var gapInfo = '';
+            if (d.hasGap && d.gapDuration) {
+              var gapMsg = (loc.dataGap || 'Data gap ({0}h)').replace('{0}', String(d.gapDuration));
+              gapInfo = ' (' + gapMsg + ')';
+            }
+            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': ' + (val > 0 ? '+' : '') + val.toFixed(is5h ? 1 : 2) + '%' + gapInfo;
+          } else {
+            result += '<br/>' + (loc.noDataAvailable || 'No data');
+          }
+          return result;
+        }
+      }
+    });
+  }
+
+  function renderWeeklyChart(data, c) {
+    const xData = data.map(function(d) { return d.date; });
+    const seriesData = data.map(function(d) { return d.weeklyDelta; });
+    const seriesColor = '#89D185';
+    const seriesName = loc.dailyDeltaLabel || 'Weekly Δ/d';
+
+    quotaChart.setOption({
+      grid: { top: 20, right: 8, bottom: 32, left: 8 },
+      xAxis: {
+        type: 'category', data: xData, boundaryGap: true,
+        axisLabel: { fontSize: 9, color: c.text, interval: 0 },
+        axisLine: { lineStyle: { color: c.grid } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 9, color: c.text },
+        splitLine: { lineStyle: { color: c.grid } },
+        min: 0
+      },
+      series: [{
+        name: seriesName, type: 'bar', data: seriesData,
+        itemStyle: { color: seriesColor, borderRadius: [3, 3, 0, 0] },
+        barMaxWidth: 30
+      }],
+      tooltip: {
+        trigger: 'axis', textStyle: { fontSize: 10 },
+        formatter: function(params) {
+          if (!params || params.length === 0) return '';
+          var idx = params[0].dataIndex;
+          var d = data[idx];
+          var result = d.date + ' ' + (loc[d.weekday] || d.weekday);
+          if (d.weeklyDelta !== null && d.weeklyDelta !== undefined) {
+            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': ' + (d.weeklyDelta > 0 ? '+' : '') + d.weeklyDelta.toFixed(1) + '%';
+          } else {
+            result += '<br/>' + (loc.noDataAvailable || 'No data');
+          }
+          if (d.weeklyPct !== null) {
+            result += '<br/>' + (loc.weeklyQuota || 'Weekly') + ': ' + d.weeklyPct.toFixed(1) + '%';
+          }
+          return result;
+        }
+      }
+    });
+  }
+
   function updateQuotas(quotas) {
     var section = document.getElementById('quota-section');
     if (!section) return;
@@ -736,6 +933,16 @@ body {
     syncMetricToggleUI();
 
     updateQuotas(data.quotas);
+
+    var quotaRateSection = document.getElementById('quota-rate-section');
+    quotaData = data.hourlyQuota || [];
+    weeklyQuotaData = data.weeklyQuota || [];
+    if ((quotaData.length > 0) || (weeklyQuotaData.length > 0)) {
+      quotaRateSection.style.display = '';
+      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
+    } else {
+      quotaRateSection.style.display = 'none';
+    }
 
     var todaySection = document.getElementById('today-section');
     if (data.today) {
@@ -815,6 +1022,69 @@ body {
   addMetricToggleHandler('today-metric-select');
   addMetricToggleHandler('week-metric-select');
 
+  function syncQuotaRateToggleUI() {
+    var allLinks = document.querySelectorAll('#quota-rate-metric-select .radio-link');
+    for (var i = 0; i < allLinks.length; i++) {
+      var link = allLinks[i];
+      if (link.dataset.value === currentQuotaRate) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    }
+  }
+
+  function onQuotaRateToggle(metric) {
+    if (metric === currentQuotaRate) return;
+    currentQuotaRate = metric;
+    syncQuotaRateToggleUI();
+    vscodeApi.postMessage({ command: 'saveQuotaRate', value: metric });
+    if (quotaData.length > 0) {
+      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
+    }
+  }
+
+  function addQuotaRateToggleHandler() {
+    var el = document.getElementById('quota-rate-metric-select');
+    if (!el) return;
+    el.addEventListener('click', function(e) {
+      var btn = e.target.closest('.radio-link');
+      if (!btn) return;
+      onQuotaRateToggle(btn.dataset.value);
+    });
+  }
+  addQuotaRateToggleHandler();
+
+  function syncQuotaRateDayToggleUI() {
+    var allLinks = document.querySelectorAll('#quota-rate-day-toggle .radio-link');
+    for (var i = 0; i < allLinks.length; i++) {
+      var link = allLinks[i];
+      if (link.dataset.value === currentQuotaDayRange) {
+        link.classList.add('active');
+      } else {
+        link.classList.remove('active');
+      }
+    }
+  }
+
+  function onQuotaRateDayToggle(dayRange) {
+    if (dayRange === currentQuotaDayRange) return;
+    currentQuotaDayRange = dayRange;
+    vscodeApi.postMessage({ command: 'saveQuotaRateDayRange', value: dayRange });
+    initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
+  }
+
+  function addQuotaRateDayToggleHandler() {
+    var el = document.getElementById('quota-rate-day-toggle');
+    if (!el) return;
+    el.addEventListener('click', function(e) {
+      var btn = e.target.closest('.radio-link');
+      if (!btn) return;
+      onQuotaRateDayToggle(btn.dataset.value);
+    });
+  }
+  addQuotaRateDayToggleHandler();
+
   window.doRefresh = function() {
     showLoading(loc.loading || 'Loading...');
     vscodeApi.postMessage({ command: 'refresh' });
@@ -851,6 +1121,12 @@ body {
       if (msg.dayRange) {
         currentRange = msg.dayRange;
       }
+      if (msg.quotaRateMetric) {
+        currentQuotaRate = msg.quotaRateMetric;
+      }
+      if (msg.quotaRateDayRange) {
+        currentQuotaDayRange = msg.quotaRateDayRange;
+      }
       updateUI(msg.data);
     } else if (msg && msg.command === 'showError') {
       hideLoading();
@@ -859,6 +1135,7 @@ body {
       document.getElementById('today-section').style.display = 'none';
       document.getElementById('week-section').style.display = 'none';
       document.getElementById('no-data').style.display = 'none';
+      document.getElementById('quota-rate-section').style.display = 'none';
       document.getElementById('error-message').textContent = msg.error;
     } else if (msg && msg.command === 'loading') {
       showLoading(loc.loading || 'Loading...');
@@ -867,11 +1144,14 @@ body {
 
   var observer = new ResizeObserver(function() {
     if (todayChart) todayChart.resize();
+    if (quotaChart) quotaChart.resize();
     if (weekChart) weekChart.resize();
   });
   var tc = document.getElementById('today-chart');
+  var qc = document.getElementById('quota-rate-chart');
   var wc = document.getElementById('week-chart');
   if (tc) observer.observe(tc);
+  if (qc) observer.observe(qc);
   if (wc) observer.observe(wc);
 
   vscodeApi.postMessage({ command: 'ready' });
