@@ -50,7 +50,13 @@ async function queryUsage(forceRefresh = false): Promise<void> {
             const cached = cache.get();
             if (cached) {
                 statusBarManager.updateUsage(cached);
-                sidebarProvider.update(cached);
+                const hourlyStats = ConfigManager.isMockDataEnabled()
+                    ? generateMockHourlyQuotaStats()
+                    : quotaHistory.getHourlyStats();
+                const weeklyStats = ConfigManager.isMockDataEnabled()
+                    ? generateMockWeeklyDailyStats()
+                    : quotaHistory.getWeeklyDailyStats();
+                sidebarProvider.update(cached, hourlyStats, weeklyStats);
                 await quotaWarningChecker.check(cached);
                 return;
             }
