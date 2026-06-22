@@ -69,59 +69,30 @@ export interface QueryError {
     code?: string;
 }
 
-/** 每小时配额快照 - 记录某个整点时刻的配额百分比 */
-export interface HourlyQuotaSnapshot {
-    /** 小时标识，格式 "YYYY-MM-DD HH" */
-    hourKey: string;
-    /** 记录时间戳 (Unix ms) */
-    timestamp: number;
-    /** 5h 配额当前百分比 */
-    fiveHourPct: number;
-    /** 周配额当前百分比 */
-    weeklyPct: number;
+/**
+ * 配额消耗数据点 - 基于 API 返回的真实 token 用量 + PLAN_QUOTAS 常量计算
+ */
+export interface QuotaRatePoint {
+    /** 显示标签，如 "14:00"（小时）或 "06-15"（日期） */
+    label: string;
+    /** 副标签（用于多行 x 轴），如 "Mon"（仅 daily 视图有意义） */
+    subLabel?: string;
+    /** 该时间段消耗的 token 数（来自 trend / monthTrend），null 表示无数据 */
+    tokens: number | null;
+    /** 占当前套餐 5h 配额的百分比 = tokens / PLAN_QUOTAS[level].tokens5h * 100 */
+    pctOf5h: number | null;
+    /** 占当前套餐周配额的百分比 = tokens / PLAN_QUOTAS[level].tokensWeekly * 100 */
+    pctOfWeekly: number | null;
+    /** 是否为今日数据点（仅 daily 视图有意义） */
+    isToday?: boolean;
 }
 
-/** 配额历史数据 */
-export interface QuotaHistory {
-    /** 按小时排列的快照列表，保留最近 7 天 */
-    hourly: HourlyQuotaSnapshot[];
-}
-
-/** 每小时配额消耗统计 - 用于展示 */
-export interface HourlyQuotaStats {
-    /** 显示标签，如 "14:00" */
-    hour: string;
-    /** 小时标识，格式 "YYYY-MM-DD HH" */
-    hourKey: string;
-    /** 该小时 5h 配额当前百分比，null 表示无数据 */
-    fiveHourPct: number | null;
-    /** 该小时周配额当前百分比 */
-    weeklyPct: number | null;
-    /** 该小时消耗的 5h 配额百分点，null 表示无数据或无法计算 */
-    fiveHourDelta: number | null;
-    /** 该小时消耗的周配额百分点 */
-    weeklyDelta: number | null;
-    /** 是否检测到配额重置 */
-    isReset: boolean;
-    /** 该小时之前是否存在数据间隙（AFK 等） */
-    hasGap: boolean;
-    /** 间隙持续小时数 */
-    gapDuration?: number;
-
-}
-
-/** 每日周配额消耗统计 - 用于七天汇总展示 */
-export interface DailyQuotaStats {
-    /** 显示标签，如 "06-05" */
-    date: string;
-    /** 日期标识，格式 "YYYY-MM-DD" */
-    dateKey: string;
-    /** 该日结束时周配额百分比，null 表示无数据 */
-    weeklyPct: number | null;
-    /** 该日消耗的周配额百分点 */
-    weeklyDelta: number | null;
-    /** 星期几，如 "Mon" */
-    weekday: string;
-    /** 是否为今天 */
-    isToday: boolean;
+/** 配额消耗图表数据 */
+export interface QuotaRateData {
+    /** 今日每小时消耗数据（用于"当天"视图） */
+    hourly: QuotaRatePoint[];
+    /** 七天每日消耗数据（用于"七天"视图） */
+    daily: QuotaRatePoint[];
+    /** 当前套餐等级（用于 tooltip 展示），空字符串表示未知 */
+    level: string;
 }

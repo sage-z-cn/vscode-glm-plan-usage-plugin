@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, HourlyQuotaStats, DailyQuotaStats } from '../types';
+import { UsageResponse } from '../types';
 import { transformResponse, SidebarData } from './dataTransformer';
 import { getHtmlTemplate } from './htmlTemplate';
 import { ConfigManager } from '../config';
@@ -7,8 +7,6 @@ import { ConfigManager } from '../config';
 export class SidebarProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _pendingData?: UsageResponse;
-    private _pendingHourlyStats?: HourlyQuotaStats[];
-    private _pendingWeeklyStats?: DailyQuotaStats[];
     private _pendingError?: string;
     private _refreshCallback?: () => Promise<void>;
     private _disposables: vscode.Disposable[] = [];
@@ -52,8 +50,6 @@ localResourceRoots: [
                     await this._refreshCallback();
                 } else if (msg.command === 'saveRange') {
                     this._context.globalState.update('glmPlanUsage.dayRange', msg.value);
-                } else if (msg.command === 'saveQuotaRate') {
-                    this._context.globalState.update('glmPlanUsage.quotaRateMetric', msg.value);
                 } else if (msg.command === 'saveQuotaRateDayRange') {
                     this._context.globalState.update('glmPlanUsage.quotaRateDayRange', msg.value);
                 } else if (msg.command === 'saveTodayChartType') {
@@ -86,10 +82,8 @@ localResourceRoots: [
         }
     }
 
-    update(response: UsageResponse, hourlyQuotaStats?: HourlyQuotaStats[], weeklyQuotaStats?: DailyQuotaStats[]): void {
+    update(response: UsageResponse): void {
         this._pendingData = response;
-        this._pendingHourlyStats = hourlyQuotaStats;
-        this._pendingWeeklyStats = weeklyQuotaStats;
         this._pendingError = undefined;
         if (this._view && this._view.visible) {
             this.postUpdate(response);
@@ -105,14 +99,16 @@ localResourceRoots: [
     }
 
     private postUpdate(response: UsageResponse): void {
-        const hourlyStats = ConfigManager.isShowQuotaRateEnabled() ? this._pendingHourlyStats : [];
-        const weeklyStats = ConfigManager.isShowQuotaRateEnabled() ? this._pendingWeeklyStats : [];
-        const data: SidebarData = transformResponse(response, hourlyStats, weeklyStats);
+        const showQuotaRate = ConfigManager.isShowQuotaRateEnabled();
+        const data: SidebarData = transformResponse(response);
+        if (!showQuotaRate) {
+            // 用户关闭了配额消耗图表：清空数据，前端会隐藏该区块
+            data.quotaRate = { hourly: [], daily: [], level: data.level };
+        }
         const dayRange = this._context.globalState.get<string>('glmPlanUsage.dayRange', '7');
-        const quotaRateMetric = this._context.globalState.get<string>('glmPlanUsage.quotaRateMetric', '5h');
         const quotaRateDayRange = this._context.globalState.get<string>('glmPlanUsage.quotaRateDayRange', 'today');
         const todayChartType = this._context.globalState.get<string>('glmPlanUsage.todayChartType', 'bar');
-        this._view?.webview.postMessage({ command: 'updateData', data, dayRange, quotaRateMetric, quotaRateDayRange, todayChartType });
+        this._view?.webview.postMessage({ command: 'updateData', data, dayRange, quotaRateDayRange, todayChartType });
     }
 
     private disposeView(): void {

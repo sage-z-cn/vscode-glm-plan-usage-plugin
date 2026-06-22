@@ -52,8 +52,11 @@ export const PLAN_QUOTAS: Record<PlanLevel, PlanQuota> = {
     },
 };
 
-/** 根据等级标识获取配额信息 */
+/** 根据等级标识获取配额信息（大小写不敏感，兼容 API 返回的任意大小写） */
 export function getPlanQuota(level: string): PlanQuota | undefined {
-    return PLAN_QUOTAS[level as PlanLevel];
+    if (!level) { return undefined; }
+    const lower = level.toLowerCase();
+    const key = Object.keys(PLAN_QUOTAS).find(k => k.toLowerCase() === lower);
+    return key ? PLAN_QUOTAS[key as PlanLevel] : undefined;
 }
 

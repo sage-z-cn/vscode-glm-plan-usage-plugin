@@ -274,12 +274,8 @@ body {
     <div class="section-title-row">
       <span id="quota-rate-section-title"></span>
       <span class="section-title-actions">
-        <span class="radio-link-group" id="quota-rate-metric-select">
-          <span id="quota-rate-metric-5h" class="radio-link active" data-value="5h">5h</span>
-          <span id="quota-rate-metric-weekly" class="radio-link" data-value="weekly">周</span>
-        </span>
         <span class="radio-link-group" id="quota-rate-day-toggle">
-          <span class="radio-link active" data-value="today">当天</span>
+          <span id="quota-rate-day-today" class="radio-link active" data-value="today">当天</span>
           <span id="quota-rate-day-week" class="radio-link" data-value="week">七天</span>
         </span>
       </span>
@@ -356,7 +352,6 @@ body {
   let currentRange = '7';
   let currentMetric = 'tokens';
 let currentChartType = 'bar';
-  let currentQuotaRate = '5h';
   let currentQuotaDayRange = 'today';
   let quotaData = [];
   let weeklyQuotaData = [];
@@ -430,63 +425,51 @@ let currentChartType = 'bar';
       var mainData = metric === 'calls' ? (data.callCount || []) : data.yValue;
       var yData = mainData.map(function(v) { return v === null ? '-' : v; });
 
-      var startIdx = 0;
-      for (var si = 0; si < yData.length; si++) {
-        if (yData[si] !== '-' && yData[si] !== 0) { startIdx = si; break; }
+      // x-axis: show today's hours, trimming morning (00:00-06:00) and
+      // evening (19:00-23:00) ranges when entirely without data; middle always shown.
+      var origLookup = {};
+      for (var oi = 0; oi < xData.length; oi++) {
+        origLookup[xData[oi]] = oi;
       }
-      var slicedX = xData.slice(startIdx);
-      var slicedY = yData.slice(startIdx);
+      var allTokens = data.yValue;
+      var allCalls = data.callCount || [];
+      function hourHasData(h) {
+        var l = (h < 10 ? '0' : '') + h + ':00';
+        var idx = origLookup[l];
+        if (idx === undefined) return false;
+        var tk = allTokens[idx];
+        var cl = allCalls[idx];
+        // 0 is treated as "no data" — only positive values count
+        return (tk !== null && tk !== undefined && tk > 0) ||
+               (cl !== null && cl !== undefined && cl > 0);
+      }
+      // Morning range [0, 6]: keep head only if any hour has data
+      var morningHasData = false;
+      for (var hm = 0; hm <= 6; hm++) { if (hourHasData(hm)) { morningHasData = true; break; } }
+      // Evening range [19, 23]: keep tail only if any hour has data
+      var eveningHasData = false;
+      for (var he = 19; he <= 23; he++) { if (hourHasData(he)) { eveningHasData = true; break; } }
+      var startH = morningHasData ? 0 : 7;
+      var endH = eveningHasData ? 23 : 18;
 
-      // Pad x-axis to at least 6 labels when data is sparse
-      var MIN_X_LABELS = 7;
-      if (slicedX.length > 0 && slicedX.length < MIN_X_LABELS) {
-        var padHours = [];
-        for (var pi = 0; pi < slicedX.length; pi++) {
-          padHours.push(parseInt(slicedX[pi], 10));
-        }
-        var padMin = Math.min.apply(null, padHours);
-        var padMax = Math.max.apply(null, padHours);
-        var padRange = padMax - padMin + 1;
-        var padTotal = Math.max(MIN_X_LABELS, padRange);
-        var padBefore = Math.floor((padTotal - padRange) / 2);
-        var padAfter = padTotal - padRange - padBefore;
-        var padStart = padMin - padBefore;
-        var padEnd = padMax + padAfter;
-        if (padStart < 0) { padEnd += (0 - padStart); padStart = 0; }
-        if (padEnd > 23) { padStart -= (padEnd - 23); padEnd = 23; if (padStart < 0) padStart = 0; }
-
-        var origLookup = {};
-        for (var oi = 0; oi < slicedX.length; oi++) {
-          origLookup[slicedX[oi]] = oi;
-        }
-
-        var newX = [], newY = [];
-        for (var h = padStart; h <= padEnd; h++) {
-          var lbl = (h < 10 ? '0' : '') + h + ':00';
-          newX.push(lbl);
-          var oi2 = origLookup[lbl];
-          newY.push(oi2 !== undefined ? slicedY[oi2] : '-');
-        }
-        slicedX = newX;
-        slicedY = newY;
+      var slicedX = [], slicedY = [];
+      for (var h = startH; h <= endH; h++) {
+        var lbl = (h < 10 ? '0' : '') + h + ':00';
+        slicedX.push(lbl);
+        var oi2 = origLookup[lbl];
+        slicedY.push(oi2 !== undefined ? yData[oi2] : '-');
       }
 
       var slicedModels = [];
 
-      // Map padded slicedX labels back to original xData indices
+      // Map slicedX labels back to original xData indices
       var paddedOrigIdx = {};
       for (var pi2 = 0; pi2 < slicedX.length; pi2++) {
         var lbl2 = slicedX[pi2];
-        var found = -1;
-        for (var xi = startIdx; xi < xData.length; xi++) {
-          if (xData[xi] === lbl2) { found = xi; break; }
-        }
-        paddedOrigIdx[pi2] = found; // -1 if padded gap
+        paddedOrigIdx[pi2] = origLookup[lbl2] !== undefined ? origLookup[lbl2] : -1;
       }
 
       // Save full data for dual-metric tooltip (closure) — padded
-      var allTokens = data.yValue;
-      var allCalls = data.callCount || [];
       var _totalTokens = [];
       var _totalCalls = [];
       for (var ti = 0; ti < slicedX.length; ti++) {
@@ -603,22 +586,22 @@ let currentChartType = 'bar';
           type: 'category',
           data: slicedX,
           boundaryGap: isBar,
-          axisLabel: { fontSize: 9, color: c.text, interval: 0, rotate: 45 },
-          axisLine: { lineStyle: { color: c.grid } },
-          axisTick: { show: false }
-        },
-        yAxis: {
-          type: 'value',
-          axisLabel: { fontSize: 9, color: c.text, formatter: metric === 'calls' ? function(v) { return v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } : function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } },
-          splitLine: { lineStyle: { color: c.grid } }
-        },
-        series: series,
-        tooltip: {
-          trigger: 'axis',
-          textStyle: { fontSize: 10 },
-          formatter: function(params) {
-            if (!params || params.length === 0) return '';
-            var result = params[0].axisValue;
+        axisLabel: { fontSize: 9, color: c.text, interval: 'auto', rotate: 45 },
+        axisLine: { lineStyle: { color: c.grid } },
+        axisTick: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: { fontSize: 9, color: c.text, formatter: metric === 'calls' ? function(v) { return v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } : function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } },
+        splitLine: { lineStyle: { color: c.grid } }
+      },
+      series: series,
+      tooltip: {
+        trigger: 'axis',
+        textStyle: { fontSize: 10 },
+        formatter: function(params) {
+          if (!params || params.length === 0) return '';
+          var result = params[0].axisValue;
             var hasData = false;
             for (var i = 0; i < params.length; i++) {
               var p = params[i];
@@ -818,7 +801,7 @@ let currentChartType = 'bar';
     });
   }
 
-  function initQuotaChart(hourlyData, weeklyData, dayRange, metric) {
+  function initQuotaChart(hourlyData, weeklyData, dayRange) {
     try {
       const dom = document.getElementById('quota-rate-chart');
       if (!dom) return;
@@ -828,31 +811,20 @@ let currentChartType = 'bar';
 
       // Set title and toggle labels
       var rateTitle = document.getElementById('quota-rate-section-title');
-      if (rateTitle) rateTitle.textContent = loc.quotaConsumptionRate || 'Quota Consumption Rate';
-      var rate5hBtn = document.getElementById('quota-rate-metric-5h');
-      var rateWeeklyBtn = document.getElementById('quota-rate-metric-weekly');
-      if (rate5hBtn) rate5hBtn.textContent = loc.fiveHourDeltaLabel || '5h Δ';
-      if (rateWeeklyBtn) rateWeeklyBtn.textContent = loc.weeklyDeltaLabel || '周 Δ';
+      if (rateTitle) rateTitle.textContent = loc.quotaConsumptionRate || 'Quota Consumption';
       var dayTodayBtn = document.getElementById('quota-rate-day-today');
       var dayWeekBtn = document.getElementById('quota-rate-day-week');
       if (dayTodayBtn) dayTodayBtn.textContent = loc.todayLabel || 'Today';
       if (dayWeekBtn) dayWeekBtn.textContent = loc.weekLabel || '7 Days';
 
       syncQuotaRateDayToggleUI();
-      syncQuotaRateToggleUI();
-
-      // Show/hide metric toggle based on day range
-      var metricSelectEl = document.getElementById('quota-rate-metric-select');
-      if (metricSelectEl) {
-        metricSelectEl.style.display = dayRange === 'today' ? '' : 'none';
-      }
 
       const isToday = dayRange === 'today';
 
       if (isToday) {
-        // ---- Today (hourly) chart ----
+        // ---- Today (hourly) chart: dual y-axis (5h% left, weekly% right) ----
         if (!hourlyData || hourlyData.length === 0) return;
-        renderHourlyChart(hourlyData, metric, c);
+        renderHourlyChart(hourlyData, c);
       } else {
         // ---- Week (daily) chart ----
         if (!weeklyData || weeklyData.length === 0) return;
@@ -863,59 +835,106 @@ let currentChartType = 'bar';
     }
   }
 
-  function renderHourlyChart(data, metric, c) {
-    const xData = data.map(function(d) { return d.hour; });
-    const is5h = metric === '5h';
-    const seriesData = is5h
-      ? data.map(function(d) { return d.fiveHourDelta; })
-      : data.map(function(d) { return d.weeklyDelta; });
-    const seriesColor = is5h ? '#5B9BD5' : '#89D185';
-    const barWidth = is5h ? 22 : 14;
-    const seriesName = is5h
-      ? (loc.fiveHourDeltaLabel || '5h')
-      : (loc.weeklyDeltaLabel || '周');
+  /** 简化版的 tokens 数字格式化（与 statusBar/formatters.ts 保持一致的视觉风格） */
+  function fmtTokensShort(n) {
+    if (n === null || n === undefined) return '--';
+    if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return String(n);
+  }
+
+  function renderHourlyChart(data, c) {
+    // Fixed x-axis: today's hours with smart trimming for morning/evening ranges
+    var dataByLabel = {};
+    for (var i = 0; i < data.length; i++) {
+      dataByLabel[data[i].label] = data[i];
+    }
+    function hourHasData(h) {
+      var l = (h < 10 ? '0' : '') + h + ':00';
+      var d = dataByLabel[l];
+      // 0 is treated as "no data" — only positive values count
+      return !!d && d.tokens !== null && d.tokens !== undefined && d.tokens > 0;
+    }
+    var morningHasData = false;
+    for (var hm = 0; hm <= 6; hm++) { if (hourHasData(hm)) { morningHasData = true; break; } }
+    var eveningHasData = false;
+    for (var he = 19; he <= 23; he++) { if (hourHasData(he)) { eveningHasData = true; break; } }
+    var startH = morningHasData ? 0 : 7;
+    var endH = eveningHasData ? 23 : 18;
+
+    var xData = [];
+    var paddedData = [];
+    for (var h = startH; h <= endH; h++) {
+      var lbl = (h < 10 ? '0' : '') + h + ':00';
+      xData.push(lbl);
+      paddedData.push(dataByLabel[lbl] || { label: lbl, tokens: null, pctOf5h: null, pctOfWeekly: null });
+    }
+    // Single series (pctOf5h) with dual y-axis: left = 5h%, right = weekly% (= value / 5)
+    const seriesData = paddedData.map(function(d) { return d.pctOf5h; });
+    const seriesColor = '#5B9BD5';
+    const seriesName = loc.fiveHourRateLabel || '5h %/h';
+    const weeklyName = loc.weeklyRateLabel || 'Weekly %/h';
+    const quotaLabel5h = loc.ofFiveHourQuota || 'of 5h quota';
+    const quotaLabelWeekly = loc.ofWeeklyQuota || 'of weekly quota';
+
+    // Both axes share the same max so ticks align; right axis divides by 5 for weekly%.
+    var dataMax = 1;
+    for (var di = 0; di < seriesData.length; di++) {
+      var v = seriesData[di];
+      if (v !== null && v !== undefined && v > dataMax) { dataMax = v; }
+    }
+    // Round up to a "nice" number with ~10% headroom
+    var axisMax = Math.ceil(dataMax * 1.1);
 
     quotaChart.setOption({
-      grid: { top: 20, right: 8, bottom: 32, left: 8 },
+      grid: { top: 20, right: 36, bottom: 32, left: 8 },
       xAxis: {
         type: 'category', data: xData, boundaryGap: true,
-        axisLabel: { fontSize: 9, color: c.text, interval: 0, rotate: 45 },
+        axisLabel: { fontSize: 9, color: c.text, interval: 'auto', rotate: 45 },
         axisLine: { lineStyle: { color: c.grid } },
         axisTick: { show: false }
       },
-      yAxis: {
-        type: 'value',
-        axisLabel: { fontSize: 9, color: c.text },
-        splitLine: { lineStyle: { color: c.grid } },
-        min: 0
-      },
+      yAxis: [
+        {
+          type: 'value',
+          position: 'left',
+          axisLabel: { fontSize: 9, color: seriesColor, formatter: function(v) { return v + '%'; } },
+          splitLine: { lineStyle: { color: c.grid } },
+          min: 0,
+          max: axisMax
+        },
+        {
+          type: 'value',
+          position: 'right',
+          axisLabel: { fontSize: 9, color: '#89D185', formatter: function(v) { return (v / 5).toFixed(1) + '%'; } },
+          splitLine: { show: false },
+          min: 0,
+          max: axisMax
+        }
+      ],
       series: [{
-        name: seriesName, type: 'bar', data: seriesData,
+        name: seriesName, type: 'bar', data: seriesData, yAxisIndex: 0,
         itemStyle: { color: seriesColor, borderRadius: [3, 3, 0, 0] },
-        barMaxWidth: barWidth
+        barMaxWidth: 22
       }],
       tooltip: {
         trigger: 'axis', textStyle: { fontSize: 10 },
         formatter: function(params) {
           if (!params || params.length === 0) return '';
           var idx = params[0].dataIndex;
-          var d = data[idx];
-          var result = d.hour;
-          if (d.isReset) {
-            result += '<br/>' + (loc.quotaResetDetected || '🔄 Quota reset detected');
-            return result;
-          }
-          var val = is5h ? d.fiveHourDelta : d.weeklyDelta;
-          var hasData = val !== null && val !== undefined;
+          var d = paddedData[idx];
+          var result = d.label;
+          var val5h = d.pctOf5h;
+          var valWeekly = d.pctOfWeekly;
+          var hasData = val5h !== null && val5h !== undefined && val5h > 0;
           if (hasData) {
-            var gapInfo = '';
-            if (d.hasGap && d.gapDuration) {
-              var gapMsg = (loc.dataGap || 'Data gap ({0}h)').replace('{0}', String(d.gapDuration));
-              gapInfo = ' (' + gapMsg + ')';
+            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': +' + val5h.toFixed(2) + '%';
+            result += '<br/><span style="color:#89D185">■</span> ' + weeklyName + ': +' + valWeekly.toFixed(2) + '%';
+            if (d.tokens !== null && d.tokens !== undefined) {
+              result += '<br/>' + (loc.tokens || 'Tokens') + ': ' + fmtTokensShort(d.tokens) + ' (' + quotaLabel5h + ' / ' + quotaLabelWeekly + ')';
             }
-            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': ' + (val > 0 ? '+' : '') + val.toFixed(is5h ? 1 : 2) + '%' + gapInfo;
           } else {
-            result += '<br/>' + (loc.noDataAvailable || 'No data');
+            result += '<br/>' + (loc.noData || 'No data');
           }
           return result;
         }
@@ -924,10 +943,14 @@ let currentChartType = 'bar';
   }
 
   function renderWeeklyChart(data, c) {
-    const xData = data.map(function(d) { return d.date + '\\n' + (loc[d.weekday] || d.weekday); });
-    const seriesData = data.map(function(d) { return d.weeklyDelta; });
+    const xData = data.map(function(d) {
+      var sub = d.subLabel ? (loc[d.subLabel] || d.subLabel) : '';
+      return sub ? (d.label + '\\n' + sub) : d.label;
+    });
+    const seriesData = data.map(function(d) { return d.pctOfWeekly; });
     const seriesColor = '#89D185';
-    const seriesName = loc.dailyDeltaLabel || 'Weekly Δ/d';
+    const seriesName = loc.dailyRateLabel || 'Weekly %/d';
+    const quotaLabel = loc.ofWeeklyQuota || 'of weekly quota';
 
     quotaChart.setOption({
       grid: { top: 20, right: 8, bottom: 40, left: 8 },
@@ -939,7 +962,7 @@ let currentChartType = 'bar';
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 9, color: c.text },
+        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return v + '%'; } },
         splitLine: { lineStyle: { color: c.grid } },
         min: 0
       },
@@ -954,14 +977,15 @@ let currentChartType = 'bar';
           if (!params || params.length === 0) return '';
           var idx = params[0].dataIndex;
           var d = data[idx];
-          var result = d.date + ' ' + (loc[d.weekday] || d.weekday);
-          if (d.weeklyDelta !== null && d.weeklyDelta !== undefined) {
-            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': ' + (d.weeklyDelta > 0 ? '+' : '') + d.weeklyDelta.toFixed(1) + '%';
+          var sub = d.subLabel ? (loc[d.subLabel] || d.subLabel) : '';
+          var result = d.label + (sub ? ' ' + sub : '');
+          if (d.pctOfWeekly !== null && d.pctOfWeekly !== undefined && d.pctOfWeekly > 0) {
+            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': +' + d.pctOfWeekly.toFixed(2) + '%';
+            if (d.tokens !== null && d.tokens !== undefined) {
+              result += '<br/>' + (loc.tokens || 'Tokens') + ': ' + fmtTokensShort(d.tokens) + ' (' + quotaLabel + ')';
+            }
           } else {
-            result += '<br/>' + (loc.noDataAvailable || 'No data');
-          }
-          if (d.weeklyPct !== null) {
-            result += '<br/>' + (loc.weeklyQuota || 'Weekly') + ': ' + d.weeklyPct.toFixed(1) + '%';
+            result += '<br/>' + (loc.noData || 'No data');
           }
           return result;
         }
@@ -1042,11 +1066,11 @@ let currentChartType = 'bar';
     updateQuotas(data.quotas);
 
     var quotaRateSection = document.getElementById('quota-rate-section');
-    quotaData = data.hourlyQuota || [];
-    weeklyQuotaData = data.weeklyQuota || [];
+    quotaData = (data.quotaRate && data.quotaRate.hourly) || [];
+    weeklyQuotaData = (data.quotaRate && data.quotaRate.daily) || [];
     if ((quotaData.length > 0) || (weeklyQuotaData.length > 0)) {
       quotaRateSection.style.display = '';
-      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
+      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange);
     } else {
       quotaRateSection.style.display = 'none';
     }
@@ -1162,39 +1186,6 @@ let currentChartType = 'bar';
   }
   addTodayChartTypeToggleHandler();
 
-  function syncQuotaRateToggleUI() {
-    var allLinks = document.querySelectorAll('#quota-rate-metric-select .radio-link');
-    for (var i = 0; i < allLinks.length; i++) {
-      var link = allLinks[i];
-      if (link.dataset.value === currentQuotaRate) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    }
-  }
-
-  function onQuotaRateToggle(metric) {
-    if (metric === currentQuotaRate) return;
-    currentQuotaRate = metric;
-    syncQuotaRateToggleUI();
-    vscodeApi.postMessage({ command: 'saveQuotaRate', value: metric });
-    if (quotaData.length > 0) {
-      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
-    }
-  }
-
-  function addQuotaRateToggleHandler() {
-    var el = document.getElementById('quota-rate-metric-select');
-    if (!el) return;
-    el.addEventListener('click', function(e) {
-      var btn = e.target.closest('.radio-link');
-      if (!btn) return;
-      onQuotaRateToggle(btn.dataset.value);
-    });
-  }
-  addQuotaRateToggleHandler();
-
   function syncQuotaRateDayToggleUI() {
     var allLinks = document.querySelectorAll('#quota-rate-day-toggle .radio-link');
     for (var i = 0; i < allLinks.length; i++) {
@@ -1211,7 +1202,7 @@ let currentChartType = 'bar';
     if (dayRange === currentQuotaDayRange) return;
     currentQuotaDayRange = dayRange;
     vscodeApi.postMessage({ command: 'saveQuotaRateDayRange', value: dayRange });
-    initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange, currentQuotaRate);
+    initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange);
   }
 
   function addQuotaRateDayToggleHandler() {
@@ -1260,9 +1251,6 @@ let currentChartType = 'bar';
       document.getElementById('week-section').style.display = '';
       if (msg.dayRange) {
         currentRange = msg.dayRange;
-      }
-      if (msg.quotaRateMetric) {
-        currentQuotaRate = msg.quotaRateMetric;
       }
       if (msg.quotaRateDayRange) {
         currentQuotaDayRange = msg.quotaRateDayRange;

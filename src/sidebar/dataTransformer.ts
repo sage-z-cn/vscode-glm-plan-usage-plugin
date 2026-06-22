@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
-import { UsageResponse, HourlyQuotaStats, DailyQuotaStats } from '../types';
-import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from '../constants';
+import { UsageResponse, QuotaRatePoint, QuotaRateData } from '../types';
+import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP, getPlanQuota } from '../constants';
 import { formatTokens, formatResetTime, formatDateTimeOnly } from '../statusBar/formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate, calculateMonthlyEstimate } from '../statusBar/usageEstimate';
 import { filterTodayData, filterTodayDataByModel, aggregateDailyData, aggregateDailyDataByModel, aggregateDailyCalls, aggregateDailyCallsByModel, getPeakToken, getPeakCalls } from '../statusBar/tooltipBuilder';
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function colorForPercentage(pct: number): string {
     if (pct >= 90) { return '#F44747'; }
@@ -101,16 +103,12 @@ export interface SidebarLocales {
     settings: string;
     configureApiKey: string;
     quotaConsumptionRate: string;
-    fiveHourDeltaLabel: string;
-    weeklyDeltaLabel: string;
-    quotaResetDetected: string;
-    dataGap: string;
-    noDataAvailable: string;
-    pp: string;
-    todayLabel: string;
-    weekLabel: string;
-    dailyDeltaLabel: string;
+    fiveHourRateLabel: string;
+    weeklyRateLabel: string;
+    dailyRateLabel: string;
     weeklyQuota: string;
+    ofFiveHourQuota: string;
+    ofWeeklyQuota: string;
     Sun: string;
     Mon: string;
     Tue: string;
@@ -120,6 +118,8 @@ export interface SidebarLocales {
     Sat: string;
     barChart: string;
     lineChart: string;
+    todayLabel: string;
+    weekLabel: string;
 }
 
 export interface SidebarData {
@@ -130,11 +130,10 @@ export interface SidebarData {
     today: TodayData | null;
     week: DailyData | null;
     month: DailyData | null;
-    hourlyQuota: HourlyQuotaStats[];
-    weeklyQuota: DailyQuotaStats[];
+    quotaRate: QuotaRateData;
 }
 
-export function transformResponse(response: UsageResponse, hourlyQuotaStats?: HourlyQuotaStats[], weeklyQuotaStats?: DailyQuotaStats[]): SidebarData {
+export function transformResponse(response: UsageResponse): SidebarData {
     const now = new Date();
 
     const quotas: QuotaItem[] = [];
@@ -322,17 +321,15 @@ export function transformResponse(response: UsageResponse, hourlyQuotaStats?: Ho
             last30Days: vscode.l10n.t('Last 30 Days'),
             settings: vscode.l10n.t('Settings'),
             configureApiKey: vscode.l10n.t('Configure API Key'),
-            quotaConsumptionRate: vscode.l10n.t('Quota Consumption Rate'),
-            fiveHourDeltaLabel: vscode.l10n.t('5h Δ/h'),
-            weeklyDeltaLabel: vscode.l10n.t('Weekly Δ/h'),
-            quotaResetDetected: vscode.l10n.t('Quota reset detected'),
-            dataGap: vscode.l10n.t('Data gap ({0}h)'),
-            noDataAvailable: vscode.l10n.t('No data available'),
-            pp: vscode.l10n.t('pp'),
+            quotaConsumptionRate: vscode.l10n.t('Quota Consumption'),
+            fiveHourRateLabel: vscode.l10n.t('5h %/h'),
+            weeklyRateLabel: vscode.l10n.t('Weekly %/h'),
+            dailyRateLabel: vscode.l10n.t('Weekly %/d'),
+            weeklyQuota: vscode.l10n.t('Weekly Quota'),
+            ofFiveHourQuota: vscode.l10n.t('of 5h quota'),
+            ofWeeklyQuota: vscode.l10n.t('of weekly quota'),
             todayLabel: vscode.l10n.t('Today'),
             weekLabel: vscode.l10n.t('7 Days'),
-            dailyDeltaLabel: vscode.l10n.t('Weekly Δ/d'),
-            weeklyQuota: vscode.l10n.t('Weekly Quota'),
             Sun: vscode.l10n.t('Sun'),
             Mon: vscode.l10n.t('Mon'),
             Tue: vscode.l10n.t('Tue'),
@@ -347,7 +344,88 @@ export function transformResponse(response: UsageResponse, hourlyQuotaStats?: Ho
         today,
         week,
         month,
-        hourlyQuota: hourlyQuotaStats || [],
-        weeklyQuota: weeklyQuotaStats || []
+        quotaRate: buildQuotaRateData(response, level)
     };
+}
+
+/**
+ * 用 trend / monthTrend + PLAN_QUOTAS 常量构建配额消耗数据。
+ *
+ * - 今日每小时：从 response.trend 提取今日数据，按 xTime 的小时部分作为 label
+ * - 七天每日：从 response.monthTrend 提取最近 7 天，按日期作为 label
+ *
+ * 每个数据点：
+ *   pctOf5h     = tokens / PLAN_QUOTAS[level].tokens5h     * 100
+ *   pctOfWeekly = tokens / PLAN_QUOTAS[level].tokensWeekly * 100
+ *
+ * 未知套餐等级时仍返回 tokens 数据，但 pct 字段为 null。
+ */
+function buildQuotaRateData(response: UsageResponse, level: string): QuotaRateData {
+    // 注意：level 此处已被 upperCase；getPlanQuota 内部做大小写不敏感查找，兼容
+    const quota = getPlanQuota(level);
+    const tokens5h = quota?.tokens5h;
+    const tokensWeekly = quota?.tokensWeekly;
+
+    const today = new Date();
+    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const hourly: QuotaRatePoint[] = [];
+    if (response.trend) {
+        for (let i = 0; i < response.trend.xTime.length; i++) {
+            const timeStr = response.trend.xTime[i];
+            if (!timeStr.startsWith(todayDateStr)) { continue; }
+            const tokens = response.trend.yValue[i];
+            if (tokens === null || tokens === undefined) {
+                hourly.push({
+                    label: timeStr.substring(11, 16) || timeStr,
+                    tokens: null,
+                    pctOf5h: null,
+                    pctOfWeekly: null,
+                    isToday: true,
+                });
+                continue;
+            }
+            hourly.push({
+                label: timeStr.substring(11, 16) || timeStr,
+                tokens,
+                pctOf5h: tokens5h ? (tokens / tokens5h) * 100 : null,
+                pctOfWeekly: tokensWeekly ? (tokens / tokensWeekly) * 100 : null,
+                isToday: true,
+            });
+        }
+    }
+
+    const daily: QuotaRatePoint[] = [];
+    const monthTrend = response.monthTrend;
+    if (monthTrend) {
+        // 聚合到每日
+        const dayMap = new Map<string, number>();
+        for (let i = 0; i < monthTrend.xTime.length; i++) {
+            const timeStr = monthTrend.xTime[i];
+            const dateKey = timeStr.split(' ')[0];
+            const val = monthTrend.yValue[i];
+            if (val !== null && val !== undefined) {
+                dayMap.set(dateKey, (dayMap.get(dateKey) || 0) + val);
+            }
+        }
+        const sortedDates = Array.from(dayMap.keys()).sort((a, b) => a.localeCompare(b));
+        const last7 = sortedDates.slice(-7);
+
+        for (const dateKey of last7) {
+            const tokens = dayMap.get(dateKey) ?? 0;
+            const [yStr, mStr, dStr] = dateKey.split('-');
+            const dt = new Date(parseInt(yStr), parseInt(mStr) - 1, parseInt(dStr));
+            const weekday = WEEKDAYS[dt.getDay()];
+            daily.push({
+                label: `${mStr}-${dStr}`,
+                subLabel: weekday,
+                tokens,
+                pctOf5h: tokens5h ? (tokens / tokens5h) * 100 : null,
+                pctOfWeekly: tokensWeekly ? (tokens / tokensWeekly) * 100 : null,
+                isToday: dateKey === todayDateStr,
+            });
+        }
+    }
+
+    return { hourly, daily, level };
 }

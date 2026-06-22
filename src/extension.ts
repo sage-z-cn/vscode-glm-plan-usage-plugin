@@ -6,8 +6,6 @@ import { UsageCache } from './cache';
 import { QuotaWarningChecker } from './quotaWarning';
 import { AutoRefreshManager } from './autoRefresh';
 import { SidebarProvider } from './sidebar';
-import { QuotaHistoryTracker } from './quotaHistory';
-import { generateMockHourlyQuotaStats, generateMockWeeklyDailyStats } from './mock-data';
 
 const MIGRATION_KEY = 'glmPlanUsage.tokenMigrated';
 
@@ -15,7 +13,6 @@ let statusBarManager: StatusBarManager;
 let autoRefreshManager: AutoRefreshManager;
 let sidebarProvider: SidebarProvider;
 let cache: UsageCache;
-let quotaHistory: QuotaHistoryTracker;
 let quotaWarningChecker: QuotaWarningChecker;
 let extensionContext: vscode.ExtensionContext;
 
@@ -50,13 +47,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
             const cached = cache.get();
             if (cached) {
                 statusBarManager.updateUsage(cached);
-                const hourlyStats = ConfigManager.isMockDataEnabled()
-                    ? generateMockHourlyQuotaStats()
-                    : quotaHistory.getHourlyStats();
-                const weeklyStats = ConfigManager.isMockDataEnabled()
-                    ? generateMockWeeklyDailyStats()
-                    : quotaHistory.getWeeklyDailyStats();
-                sidebarProvider.update(cached, hourlyStats, weeklyStats);
+                sidebarProvider.update(cached);
                 await quotaWarningChecker.check(cached);
                 return;
             }
@@ -64,15 +55,8 @@ async function queryUsage(forceRefresh = false): Promise<void> {
 
         const response = await UsageQueryService.queryUsage();
         cache.set(response);
-        quotaHistory.record(response.quotaLimits);
         statusBarManager.updateUsage(response);
-        const hourlyStats = ConfigManager.isMockDataEnabled()
-            ? generateMockHourlyQuotaStats()
-            : quotaHistory.getHourlyStats();
-        const weeklyStats = ConfigManager.isMockDataEnabled()
-            ? generateMockWeeklyDailyStats()
-            : quotaHistory.getWeeklyDailyStats();
-        sidebarProvider.update(response, hourlyStats, weeklyStats);
+        sidebarProvider.update(response);
         autoRefreshManager.scheduleResetRefresh(response);
 
         await quotaWarningChecker.check(response);
@@ -115,7 +99,6 @@ export async function activate(context: vscode.ExtensionContext) {
     extensionContext = context;
     statusBarManager = new StatusBarManager();
     cache = new UsageCache(context.globalState);
-    quotaHistory = new QuotaHistoryTracker(context.globalState);
     quotaWarningChecker = new QuotaWarningChecker(context.globalState);
 
     sidebarProvider = new SidebarProvider(context);
