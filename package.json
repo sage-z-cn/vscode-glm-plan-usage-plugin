@@ -2,7 +2,7 @@
   "name": "glm-plan-usage",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "publisher": "sagez",
   "license": "MIT",
   "icon": "assets/icon.png",
