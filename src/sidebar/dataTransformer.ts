@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { UsageResponse, QuotaRatePoint, QuotaRateData, HourlyQuotaStats, DailyQuotaStats } from '../types';
+import { UsageResponse } from '../types';
 import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from '../constants';
 import { formatTokens, formatResetTime, formatDateTimeOnly } from '../statusBar/formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate, calculateMonthlyEstimate } from '../statusBar/usageEstimate';
@@ -100,13 +100,6 @@ export interface SidebarLocales {
     last30Days: string;
     settings: string;
     configureApiKey: string;
-    quotaConsumptionRate: string;
-    fiveHourRateLabel: string;
-    weeklyRateLabel: string;
-    dailyRateLabel: string;
-    weeklyQuota: string;
-    ofFiveHourQuota: string;
-    ofWeeklyQuota: string;
     Sun: string;
     Mon: string;
     Tue: string;
@@ -116,8 +109,6 @@ export interface SidebarLocales {
     Sat: string;
     barChart: string;
     lineChart: string;
-    todayLabel: string;
-    weekLabel: string;
 }
 
 export interface SidebarData {
@@ -128,10 +119,9 @@ export interface SidebarData {
     today: TodayData | null;
     week: DailyData | null;
     month: DailyData | null;
-    quotaRate: QuotaRateData;
 }
 
-export function transformResponse(response: UsageResponse, hourlyQuotaStats?: HourlyQuotaStats[], weeklyQuotaStats?: DailyQuotaStats[]): SidebarData {
+export function transformResponse(response: UsageResponse): SidebarData {
     const now = new Date();
 
     const quotas: QuotaItem[] = [];
@@ -319,15 +309,6 @@ export function transformResponse(response: UsageResponse, hourlyQuotaStats?: Ho
             last30Days: vscode.l10n.t('Last 30 Days'),
             settings: vscode.l10n.t('Settings'),
             configureApiKey: vscode.l10n.t('Configure API Key'),
-            quotaConsumptionRate: vscode.l10n.t('Quota Consumption'),
-            fiveHourRateLabel: vscode.l10n.t('5h %/h'),
-            weeklyRateLabel: vscode.l10n.t('Weekly %/h'),
-            dailyRateLabel: vscode.l10n.t('Weekly %/d'),
-            weeklyQuota: vscode.l10n.t('Weekly Quota'),
-            ofFiveHourQuota: vscode.l10n.t('of 5h quota'),
-            ofWeeklyQuota: vscode.l10n.t('of weekly quota'),
-            todayLabel: vscode.l10n.t('Today'),
-            weekLabel: vscode.l10n.t('7 Days'),
             Sun: vscode.l10n.t('Sun'),
             Mon: vscode.l10n.t('Mon'),
             Tue: vscode.l10n.t('Tue'),
@@ -342,42 +323,5 @@ export function transformResponse(response: UsageResponse, hourlyQuotaStats?: Ho
         today,
         week,
         month,
-        quotaRate: buildQuotaRateData(hourlyQuotaStats, weeklyQuotaStats, level)
     };
-}
-
-/**
- * 将 QuotaHistoryTracker 产出的配额百分比增量统计映射为图表 UI 所需的 QuotaRateData。
- *
- * 采用按小时记录的配额百分比快照计算消耗增量（delta），而非按 token ÷ 套餐常量估算 ——
- * 这样能正确反映不同时段、不同模型的消耗倍率差异。tokens 字段在此方案下恒为 null。
- *
- * 映射关系：
- *   hourly.pctOf5h     = HourlyQuotaStats.fiveHourDelta
- *   hourly.pctOfWeekly = HourlyQuotaStats.weeklyDelta
- *   daily.pctOfWeekly  = DailyQuotaStats.weeklyDelta
- */
-function buildQuotaRateData(
-    hourlyStats: HourlyQuotaStats[] | undefined,
-    weeklyStats: DailyQuotaStats[] | undefined,
-    level: string,
-): QuotaRateData {
-    const hourly: QuotaRatePoint[] = (hourlyStats || []).map(stat => ({
-        label: stat.hour,
-        tokens: null,
-        pctOf5h: stat.fiveHourDelta,
-        pctOfWeekly: stat.weeklyDelta,
-        isToday: true,
-    }));
-
-    const daily: QuotaRatePoint[] = (weeklyStats || []).map(stat => ({
-        label: stat.date,
-        subLabel: stat.weekday,
-        tokens: null,
-        pctOf5h: null,
-        pctOfWeekly: stat.weeklyDelta,
-        isToday: stat.isToday,
-    }));
-
-    return { hourly, daily, level };
 }

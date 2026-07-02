@@ -269,21 +269,6 @@ body {
 
 <div class="section" id="quota-section"></div>
 
-<div class="section" id="quota-rate-section" style="display:none">
-  <div class="section-title">
-    <div class="section-title-row">
-      <span id="quota-rate-section-title"></span>
-      <span class="section-title-actions">
-        <span class="radio-link-group" id="quota-rate-day-toggle">
-          <span id="quota-rate-day-today" class="radio-link active" data-value="today">当天</span>
-          <span id="quota-rate-day-week" class="radio-link" data-value="week">七天</span>
-        </span>
-      </span>
-    </div>
-  </div>
-  <div id="quota-rate-chart" class="chart-container" style="height:190px"></div>
-</div>
-
 <div class="section" id="today-section" style="display:none">
   <div class="section-title">
     <div class="section-title-row">
@@ -346,15 +331,11 @@ body {
   const vscodeApi = acquireVsCodeApi();
   let todayChart = null;
   let weekChart = null;
-  let quotaChart = null;
   let loc = {};
   let storedData = null;
   let currentRange = '7';
   let currentMetric = 'tokens';
 let currentChartType = 'bar';
-  let currentQuotaDayRange = 'today';
-  let quotaData = [];
-  let weeklyQuotaData = [];
 
   function showLoading(text) {
     var overlay = document.getElementById('loading-overlay');
@@ -825,199 +806,6 @@ let currentChartType = 'bar';
     });
   }
 
-  function initQuotaChart(hourlyData, weeklyData, dayRange) {
-    try {
-      const dom = document.getElementById('quota-rate-chart');
-      if (!dom) return;
-      if (quotaChart) quotaChart.dispose();
-      quotaChart = echarts.init(dom);
-      const c = chartColors();
-
-      // Set title and toggle labels
-      var rateTitle = document.getElementById('quota-rate-section-title');
-      if (rateTitle) rateTitle.textContent = loc.quotaConsumptionRate || 'Quota Consumption';
-      var dayTodayBtn = document.getElementById('quota-rate-day-today');
-      var dayWeekBtn = document.getElementById('quota-rate-day-week');
-      if (dayTodayBtn) dayTodayBtn.textContent = loc.todayLabel || 'Today';
-      if (dayWeekBtn) dayWeekBtn.textContent = loc.weekLabel || '7 Days';
-
-      syncQuotaRateDayToggleUI();
-
-      const isToday = dayRange === 'today';
-
-      if (isToday) {
-        // ---- Today (hourly) chart: dual y-axis (5h% left, weekly% right) ----
-        if (!hourlyData || hourlyData.length === 0) return;
-        renderHourlyChart(hourlyData, c);
-      } else {
-        // ---- Week (daily) chart ----
-        if (!weeklyData || weeklyData.length === 0) return;
-        renderWeeklyChart(weeklyData, c);
-      }
-    } catch(e) {
-      console.error('initQuotaChart error:', e);
-    }
-  }
-
-  /** 简化版的 tokens 数字格式化（与 statusBar/formatters.ts 保持一致的视觉风格） */
-  function fmtTokensShort(n) {
-    if (n === null || n === undefined) return '--';
-    if (n >= 1000000) return (n / 1000000).toFixed(2) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-    return String(n);
-  }
-
-  function renderHourlyChart(data, c) {
-    // Fixed x-axis: today's hours with smart trimming for morning/evening ranges
-    var dataByLabel = {};
-    for (var i = 0; i < data.length; i++) {
-      dataByLabel[data[i].label] = data[i];
-    }
-    function hourHasData(h) {
-      var l = (h < 10 ? '0' : '') + h + ':00';
-      var d = dataByLabel[l];
-      // 0 is treated as "no data" — only positive values count
-      return !!d && d.tokens !== null && d.tokens !== undefined && d.tokens > 0;
-    }
-    var morningHasData = false;
-    for (var hm = 0; hm <= 6; hm++) { if (hourHasData(hm)) { morningHasData = true; break; } }
-    var eveningHasData = false;
-    for (var he = 19; he <= 23; he++) { if (hourHasData(he)) { eveningHasData = true; break; } }
-    var startH = morningHasData ? 0 : 7;
-    var endH = eveningHasData ? 23 : 18;
-
-    var xData = [];
-    var paddedData = [];
-    for (var h = startH; h <= endH; h++) {
-      var lbl = (h < 10 ? '0' : '') + h + ':00';
-      xData.push(lbl);
-      paddedData.push(dataByLabel[lbl] || { label: lbl, tokens: null, pctOf5h: null, pctOfWeekly: null });
-    }
-    // Single series (pctOf5h) with dual y-axis: left = 5h%, right = weekly% (= value / 5)
-    const seriesData = paddedData.map(function(d) { return d.pctOf5h; });
-    const seriesColor = '#5B9BD5';
-    const seriesName = loc.fiveHourRateLabel || '5h %/h';
-    const weeklyName = loc.weeklyRateLabel || 'Weekly %/h';
-    const quotaLabel5h = loc.ofFiveHourQuota || 'of 5h quota';
-    const quotaLabelWeekly = loc.ofWeeklyQuota || 'of weekly quota';
-
-    // Both axes share the same max so ticks align; right axis divides by 5 for weekly%.
-    var dataMax = 1;
-    for (var di = 0; di < seriesData.length; di++) {
-      var v = seriesData[di];
-      if (v !== null && v !== undefined && v > dataMax) { dataMax = v; }
-    }
-    // Round up to a "nice" number with ~10% headroom
-    var axisMax = Math.ceil(dataMax * 1.1);
-
-    quotaChart.setOption({
-      grid: { top: 20, right: 36, bottom: 32, left: 8 },
-      xAxis: {
-        type: 'category', data: xData, boundaryGap: true,
-        axisLabel: { fontSize: 9, color: c.text, interval: 'auto', rotate: 45 },
-        axisLine: { lineStyle: { color: c.grid } },
-        axisTick: { show: false }
-      },
-      yAxis: [
-        {
-          type: 'value',
-          position: 'left',
-          axisLabel: { fontSize: 9, color: seriesColor, formatter: function(v) { return v + '%'; } },
-          splitLine: { lineStyle: { color: c.grid } },
-          min: 0,
-          max: axisMax
-        },
-        {
-          type: 'value',
-          position: 'right',
-          axisLabel: { fontSize: 9, color: '#89D185', formatter: function(v) { return (v / 5).toFixed(1) + '%'; } },
-          splitLine: { show: false },
-          min: 0,
-          max: axisMax
-        }
-      ],
-      series: [{
-        name: seriesName, type: 'bar', data: seriesData, yAxisIndex: 0,
-        itemStyle: { color: seriesColor, borderRadius: [3, 3, 0, 0] },
-        barMaxWidth: 22
-      }],
-      tooltip: {
-        trigger: 'axis', textStyle: { fontSize: 10 },
-        formatter: function(params) {
-          if (!params || params.length === 0) return '';
-          var idx = params[0].dataIndex;
-          var d = paddedData[idx];
-          var result = d.label;
-          var val5h = d.pctOf5h;
-          var valWeekly = d.pctOfWeekly;
-          var hasData = val5h !== null && val5h !== undefined && val5h > 0;
-          if (hasData) {
-            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': +' + val5h.toFixed(2) + '%';
-            result += '<br/><span style="color:#89D185">■</span> ' + weeklyName + ': +' + valWeekly.toFixed(2) + '%';
-            if (d.tokens !== null && d.tokens !== undefined) {
-              result += '<br/>' + (loc.tokens || 'Tokens') + ': ' + fmtTokensShort(d.tokens) + ' (' + quotaLabel5h + ' / ' + quotaLabelWeekly + ')';
-            }
-          } else {
-            result += '<br/>' + (loc.noData || 'No data');
-          }
-          return result;
-        }
-      }
-    });
-  }
-
-  function renderWeeklyChart(data, c) {
-    const xData = data.map(function(d) {
-      var sub = d.subLabel ? (loc[d.subLabel] || d.subLabel) : '';
-      return sub ? (d.label + '\\n' + sub) : d.label;
-    });
-    const seriesData = data.map(function(d) { return d.pctOfWeekly; });
-    const seriesColor = '#89D185';
-    const seriesName = loc.dailyRateLabel || 'Weekly %/d';
-    const quotaLabel = loc.ofWeeklyQuota || 'of weekly quota';
-
-    quotaChart.setOption({
-      grid: { top: 20, right: 36, bottom: 40, left: 8 },
-      xAxis: {
-        type: 'category', data: xData, boundaryGap: true,
-        axisLabel: { fontSize: 9, color: c.text, interval: 0 },
-        axisLine: { lineStyle: { color: c.grid } },
-        axisTick: { show: false }
-      },
-      yAxis: {
-        type: 'value',
-        position: 'right',
-        axisLabel: { fontSize: 9, color: seriesColor, formatter: function(v) { return v + '%'; } },
-        splitLine: { lineStyle: { color: c.grid } },
-        min: 0
-      },
-      series: [{
-        name: seriesName, type: 'bar', data: seriesData,
-        itemStyle: { color: seriesColor, borderRadius: [3, 3, 0, 0] },
-        barMaxWidth: 30
-      }],
-      tooltip: {
-        trigger: 'axis', textStyle: { fontSize: 10 },
-        formatter: function(params) {
-          if (!params || params.length === 0) return '';
-          var idx = params[0].dataIndex;
-          var d = data[idx];
-          var sub = d.subLabel ? (loc[d.subLabel] || d.subLabel) : '';
-          var result = d.label + (sub ? ' ' + sub : '');
-          if (d.pctOfWeekly !== null && d.pctOfWeekly !== undefined && d.pctOfWeekly > 0) {
-            result += '<br/><span style="color:' + seriesColor + '">■</span> ' + seriesName + ': +' + d.pctOfWeekly.toFixed(2) + '%';
-            if (d.tokens !== null && d.tokens !== undefined) {
-              result += '<br/>' + (loc.tokens || 'Tokens') + ': ' + fmtTokensShort(d.tokens) + ' (' + quotaLabel + ')';
-            }
-          } else {
-            result += '<br/>' + (loc.noData || 'No data');
-          }
-          return result;
-        }
-      }
-    });
-  }
-
   function updateQuotas(quotas) {
     var section = document.getElementById('quota-section');
     if (!section) return;
@@ -1089,16 +877,6 @@ let currentChartType = 'bar';
     syncTodayChartTypeUI();
 
     updateQuotas(data.quotas);
-
-    var quotaRateSection = document.getElementById('quota-rate-section');
-    quotaData = (data.quotaRate && data.quotaRate.hourly) || [];
-    weeklyQuotaData = (data.quotaRate && data.quotaRate.daily) || [];
-    if ((quotaData.length > 0) || (weeklyQuotaData.length > 0)) {
-      quotaRateSection.style.display = '';
-      initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange);
-    } else {
-      quotaRateSection.style.display = 'none';
-    }
 
     var todaySection = document.getElementById('today-section');
     if (data.today) {
@@ -1211,36 +989,6 @@ let currentChartType = 'bar';
   }
   addTodayChartTypeToggleHandler();
 
-  function syncQuotaRateDayToggleUI() {
-    var allLinks = document.querySelectorAll('#quota-rate-day-toggle .radio-link');
-    for (var i = 0; i < allLinks.length; i++) {
-      var link = allLinks[i];
-      if (link.dataset.value === currentQuotaDayRange) {
-        link.classList.add('active');
-      } else {
-        link.classList.remove('active');
-      }
-    }
-  }
-
-  function onQuotaRateDayToggle(dayRange) {
-    if (dayRange === currentQuotaDayRange) return;
-    currentQuotaDayRange = dayRange;
-    vscodeApi.postMessage({ command: 'saveQuotaRateDayRange', value: dayRange });
-    initQuotaChart(quotaData, weeklyQuotaData, currentQuotaDayRange);
-  }
-
-  function addQuotaRateDayToggleHandler() {
-    var el = document.getElementById('quota-rate-day-toggle');
-    if (!el) return;
-    el.addEventListener('click', function(e) {
-      var btn = e.target.closest('.radio-link');
-      if (!btn) return;
-      onQuotaRateDayToggle(btn.dataset.value);
-    });
-  }
-  addQuotaRateDayToggleHandler();
-
   window.doRefresh = function() {
     showLoading(loc.loading || 'Loading...');
     vscodeApi.postMessage({ command: 'refresh' });
@@ -1277,9 +1025,6 @@ let currentChartType = 'bar';
       if (msg.dayRange) {
         currentRange = msg.dayRange;
       }
-      if (msg.quotaRateDayRange) {
-        currentQuotaDayRange = msg.quotaRateDayRange;
-      }
       if (msg.todayChartType) {
         currentChartType = msg.todayChartType;
       }
@@ -1291,7 +1036,6 @@ let currentChartType = 'bar';
       document.getElementById('today-section').style.display = 'none';
       document.getElementById('week-section').style.display = 'none';
       document.getElementById('no-data').style.display = 'none';
-      document.getElementById('quota-rate-section').style.display = 'none';
       document.getElementById('error-message').textContent = msg.error;
     } else if (msg && msg.command === 'loading') {
       showLoading(loc.loading || 'Loading...');
@@ -1300,14 +1044,11 @@ let currentChartType = 'bar';
 
   var observer = new ResizeObserver(function() {
     if (todayChart) todayChart.resize();
-    if (quotaChart) quotaChart.resize();
     if (weekChart) weekChart.resize();
   });
   var tc = document.getElementById('today-chart');
-  var qc = document.getElementById('quota-rate-chart');
   var wc = document.getElementById('week-chart');
   if (tc) observer.observe(tc);
-  if (qc) observer.observe(qc);
   if (wc) observer.observe(wc);
 
   vscodeApi.postMessage({ command: 'ready' });

@@ -19,18 +19,6 @@
 - **配额预警**：使用率 ≥ 90% 自动通知
 - **自动刷新** · **多平台**（智谱/Z.ai）· **中英双语** · **API Key 加密存储**
 
-### 套餐配额
-
-各等级套餐的 5 小时和周配额限制（仅供参考，数据截至 2026-06-19）：
-
-| 套餐 | 5h Token 配额 | 5h 调用次数 | 周 Token 配额 | 周调用次数 |
-|:----:|-------------:|----------:|-------------:|---------:|
-| Lite | 11.86M | 105 | 59.30M | 527 |
-| Pro | 59.30M | 527 | 296.52M | 2,635 |
-| Max | 237.22M | 2,108 | 1,186.09M | 10,540 |
-
-> 注：Lite 套餐的 5h 配额基于 Pro ÷ 5 取整，实际产品中可能略有差异。周配额 = 5h 配额 × 5；Pro = Lite × 5；Max = Pro × 4。
-
 ### 界面预览
 
 #### 状态栏
@@ -51,7 +39,6 @@
 | `glmPlanUsage.autoRefresh` | 启动时自动刷新 | `true` |
 | `glmPlanUsage.refreshInterval` | 自动刷新间隔（秒），`0` 为禁用 | `300` |
 | `glmPlanUsage.enableRetry` | 请求失败时自动重试（最多3次） | `true` |
-| `glmPlanUsage.showQuotaRate` | 侧边栏显示配额消耗图表 | `true` |
 
 #### 安全存储说明
 
@@ -99,18 +86,6 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Quota Warning**: Auto notification at ≥90%
 - **Auto Refresh** · **Multi-Platform** (ZHIPU/Z.ai) · **i18n (EN/中文)** · **Encrypted API Key Storage**
 
-### Plan Quotas
-
-5-hour and weekly quota limits for each plan tier (for reference only, data as of 2026-06-19):
-
-| Plan | 5h Tokens | 5h Calls | Weekly Tokens | Weekly Calls |
-|:----:|----------:|--------:|-------------:|------------:|
-| Lite | 11.86M | 105 | 59.30M | 527 |
-| Pro | 59.30M | 527 | 296.52M | 2,635 |
-| Max | 237.22M | 2,108 | 1,186.09M | 10,540 |
-
-> Note: Lite tier 5h quotas are based on Pro ÷ 5, rounded. Actual product values may differ slightly. Weekly = 5h × 5; Pro = Lite × 5; Max = Pro × 4.
-
 ### UI Preview
 
 #### Status Bar
@@ -131,7 +106,6 @@ Configure in settings (`Ctrl+,`):
 | `glmPlanUsage.autoRefresh` | Auto refresh on startup | `true` |
 | `glmPlanUsage.refreshInterval` | Auto refresh interval (seconds), `0` to disable | `300` |
 | `glmPlanUsage.enableRetry` | Automatically retry on request failure (up to 3 retries) | `true` |
-| `glmPlanUsage.showQuotaRate` | Show quota consumption chart in sidebar | `true` |
 
 #### Secure Storage
 

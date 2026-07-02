@@ -80,14 +80,6 @@
   "Estimated": "预估",
   "Loading...": "加载中...",
   "{0} has been reset": "{0}已刷新",
-  "Quota Consumption": "配额消耗",
-  "5h %/h": "5h%/时",
-  "Weekly %/h": "周%/时",
-  "Weekly %/d": "周%/天",
-  "of 5h quota": "占5h配额",
-  "of weekly quota": "占周配额",
-  "Today": "当天",
-  "7 Days": "七天",
   "Bar": "柱状图",
   "Line": "折线图"
 }

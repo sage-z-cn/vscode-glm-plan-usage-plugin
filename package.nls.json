@@ -18,6 +18,5 @@
   "configuration.refreshInterval.description": "Auto-refresh interval in seconds, minimum 60 (0 to disable)",
   "configuration.afkThreshold.description": "AFK threshold in seconds, set to 0 to disable, must be greater than refresh interval to take effect. Auto-refresh is paused during AFK.",
   "configuration.enableRetry.description": "Automatically retry on request failure (up to 3 retries for network errors, timeouts, and server errors)",
-  "configuration.resetNotification.description": "Show notification when quota resets (5-hour or weekly)",
-  "configuration.showQuotaRate.description": "Show quota consumption chart in the sidebar"
+  "configuration.resetNotification.description": "Show notification when quota resets (5-hour or weekly)"
 }
