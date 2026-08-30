@@ -7,16 +7,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _pendingData?: UsageResponse;
     private _pendingError?: string;
-    private _refreshCallback?: () => Promise<void>;
     private _disposables: vscode.Disposable[] = [];
 
     constructor(
         private readonly _context: vscode.ExtensionContext
     ) {}
-
-    setRefreshCallback(cb: () => Promise<void>): void {
-        this._refreshCallback = cb;
-    }
 
     resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -44,17 +39,10 @@ localResourceRoots: [
             webviewView.webview.onDidReceiveMessage(async (msg) => {
                 if (msg.command === 'ready') {
                     this.flushPending();
-                } else if (msg.command === 'refresh' && this._refreshCallback) {
-                    this._view?.webview.postMessage({ command: 'loading' });
-                    await this._refreshCallback();
                 } else if (msg.command === 'saveRange') {
                     this._context.globalState.update('glmPlanUsage.dayRange', msg.value);
                 } else if (msg.command === 'saveTodayChartType') {
                     this._context.globalState.update('glmPlanUsage.todayChartType', msg.value);
-                } else if (msg.command === 'openSettings') {
-                    vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
-                } else if (msg.command === 'setToken') {
-                    vscode.commands.executeCommand('glmPlanUsage.setToken');
                 }
             })
         );

@@ -4,7 +4,6 @@ import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from '../constants';
 import { UserActivityState } from '../enums';
 import { formatRemainingTimeCompact, getCombinedColor } from './formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate } from './usageEstimate';
-import { buildTooltip } from './tooltipBuilder';
 
 export class StatusBarManager implements vscode.Disposable {
     private statusItem: vscode.StatusBarItem;
@@ -19,19 +18,15 @@ export class StatusBarManager implements vscode.Disposable {
             100
         );
 
-        this.statusItem.command = 'glmPlanUsage.refresh';
+        this.statusItem.command = 'workbench.view.extension.glmPlanUsage';
         this.statusItem.text = '$(sync~spin) GLM: --';
+        this.statusItem.tooltip = vscode.l10n.t('Click to view details');
         this.statusItem.hide();
 
         this.outputChannel = vscode.window.createOutputChannel('GLM Plan Usage');
     }
 
     show(): void {
-        this.statusItem.show();
-    }
-
-    refreshTooltip(): void {
-        this.statusItem.hide();
         this.statusItem.show();
     }
 
@@ -44,7 +39,6 @@ export class StatusBarManager implements vscode.Disposable {
         if (this.userActivityState === UserActivityState.AFK) {
             this.statusItem.color = StatusBarManager.COLOR_AFK;
             this.statusItem.text = 'GLM: AFK';
-            this.statusItem.tooltip = undefined;
         } else if (this.lastResponse) {
             this.updateUsage(this.lastResponse);
         }
@@ -57,7 +51,6 @@ export class StatusBarManager implements vscode.Disposable {
 
     setLoading(): void {
         this.statusItem.text = '$(sync~spin) GLM: --';
-        this.statusItem.tooltip = vscode.l10n.t('Querying...');
         this.show();
     }
 
@@ -94,29 +87,18 @@ export class StatusBarManager implements vscode.Disposable {
             fiveHourPct,
             weeklyPct
         });
-        this.statusItem.tooltip = buildTooltip(response);
         this.show();
     }
 
     setError(message: string): void {
         this.statusItem.text = '$(error) GLM';
         this.statusItem.color = '#F44747';
-        const md = new vscode.MarkdownString();
-        md.appendMarkdown(`### $(error) ${vscode.l10n.t('Error')}\n\n`);
-        md.appendMarkdown(`${message}\n\n`);
-        md.appendMarkdown(`*${vscode.l10n.t('Click to retry')}*`);
-        this.statusItem.tooltip = md;
         this.statusItem.show();
     }
 
     setNotConfigured(): void {
         this.statusItem.text = '$(settings-gear) GLM';
         this.statusItem.color = undefined;
-        const md = new vscode.MarkdownString();
-        md.appendMarkdown(`### $(settings-gear) GLM Plan Usage\n\n`);
-        md.appendMarkdown(`${vscode.l10n.t('API Key not configured.')}\n\n`);
-        md.appendMarkdown(`*${vscode.l10n.t('Click to configure')}*`);
-        this.statusItem.tooltip = md;
         this.statusItem.show();
     }
 

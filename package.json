@@ -56,14 +56,40 @@
       {
         "command": "glmPlanUsage.setToken",
         "title": "%command.setToken.title%",
-        "description": "%command.setToken.description%"
+        "description": "%command.setToken.description%",
+        "icon": "$(key)"
       },
       {
         "command": "glmPlanUsage.refresh",
         "title": "%command.refresh.title%",
-        "description": "%command.refresh.description%"
+        "description": "%command.refresh.description%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "glmPlanUsage.openSettings",
+        "title": "%command.openSettings.title%",
+        "icon": "$(gear)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "glmPlanUsage.refresh",
+          "group": "navigation@1",
+          "when": "view == glmPlanUsage.usageStats"
+        },
+        {
+          "command": "glmPlanUsage.setToken",
+          "group": "navigation@2",
+          "when": "view == glmPlanUsage.usageStats"
+        },
+        {
+          "command": "glmPlanUsage.openSettings",
+          "group": "navigation@3",
+          "when": "view == glmPlanUsage.usageStats"
+        }
+      ]
+    },
     "configuration": {
       "title": "%configuration.title%",
       "properties": {

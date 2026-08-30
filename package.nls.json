@@ -7,6 +7,7 @@
   "command.refresh.description": "Refresh current GLM plan usage and quota information",
   "command.setToken.title": "GLM Coding Plan Usage: Set API Key",
   "command.setToken.description": "Securely set your GLM API Key using encrypted storage (never written to files)",
+  "command.openSettings.title": "Settings",
   "configuration.title": "GLM Coding Plan Usage",
   "configuration.authToken.description": "Authentication token for GLM Coding Plan (GLM_API_KEY)",
   "configuration.authToken.deprecated": "Token is now stored securely via SecretStorage. Use the \"GLM Coding Plan Usage: Set API Key\" command instead.",

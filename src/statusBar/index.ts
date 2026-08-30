@@ -1,6 +1,4 @@
 export { StatusBarManager } from './statusBarManager';
-export { buildTooltip } from './tooltipBuilder';
-export type { TrendSlice } from './tooltipBuilder';
 export {
     getCombinedColor,
     getWeekdayName,

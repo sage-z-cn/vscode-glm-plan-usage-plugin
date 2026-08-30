@@ -81,7 +81,6 @@ export interface DailyData {
 }
 
 export interface SidebarLocales {
-    title: string;
     todayUsage: string;
     dailyUsage: string;
     tokens: string;
@@ -90,7 +89,6 @@ export interface SidebarLocales {
     noQuotaData: string;
     updated: string;
     total: string;
-    refresh: string;
     loading: string;
     tooltipTokens: string;
     nextReset: string;
@@ -98,8 +96,6 @@ export interface SidebarLocales {
     remaining: string;
     last7Days: string;
     last30Days: string;
-    settings: string;
-    configureApiKey: string;
     Sun: string;
     Mon: string;
     Tue: string;
@@ -282,15 +278,11 @@ export function transformResponse(response: UsageResponse): SidebarData {
     }
 
     const level = (response.level || '').toUpperCase();
-    const title = level
-        ? vscode.l10n.t(`[{0}] GLM Coding Plan Usage`, level)
-        : vscode.l10n.t('GLM Coding Plan Usage');
 
     return {
         level,
         updated: now.toLocaleString(),
         locales: {
-            title,
             todayUsage: vscode.l10n.t('Today Usage'),
             dailyUsage: vscode.l10n.t('Daily Usage'),
             tokens: vscode.l10n.t('Tokens'),
@@ -299,7 +291,6 @@ export function transformResponse(response: UsageResponse): SidebarData {
             noQuotaData: vscode.l10n.t('No data available. Please check your API Key.'),
             updated: vscode.l10n.t('Updated'),
             total: vscode.l10n.t('Total'),
-            refresh: vscode.l10n.t('Refresh'),
             loading: vscode.l10n.t('Loading...'),
             tooltipTokens: vscode.l10n.t('Tokens'),
             nextReset: vscode.l10n.t('Next reset'),
@@ -307,8 +298,6 @@ export function transformResponse(response: UsageResponse): SidebarData {
             remaining: vscode.l10n.t('Remaining'),
             last7Days: vscode.l10n.t('Last 7 Days'),
             last30Days: vscode.l10n.t('Last 30 Days'),
-            settings: vscode.l10n.t('Settings'),
-            configureApiKey: vscode.l10n.t('Configure API Key'),
             Sun: vscode.l10n.t('Sun'),
             Mon: vscode.l10n.t('Mon'),
             Tue: vscode.l10n.t('Tue'),

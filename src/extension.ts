@@ -102,9 +102,6 @@ export async function activate(context: vscode.ExtensionContext) {
     quotaWarningChecker = new QuotaWarningChecker(context.globalState);
 
     sidebarProvider = new SidebarProvider(context);
-    sidebarProvider.setRefreshCallback(async () => {
-        await queryUsage(true);
-    });
 
     autoRefreshManager = new AutoRefreshManager(
         statusBarManager,
@@ -126,7 +123,13 @@ export async function activate(context: vscode.ExtensionContext) {
                 return;
             }
             await queryUsage(true);
-            statusBarManager.refreshTooltip();
+        }
+    );
+
+    const openSettingsCommand = vscode.commands.registerCommand(
+        'glmPlanUsage.openSettings',
+        () => {
+            vscode.commands.executeCommand('workbench.action.openSettings', 'glmPlanUsage');
         }
     );
 
@@ -148,6 +151,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(queryCommand);
     context.subscriptions.push(setTokenCommand);
+    context.subscriptions.push(openSettingsCommand);
     context.subscriptions.push(statusBarManager);
     context.subscriptions.push(autoRefreshManager);
     context.subscriptions.push(

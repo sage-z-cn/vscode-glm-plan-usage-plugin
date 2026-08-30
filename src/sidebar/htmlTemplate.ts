@@ -19,20 +19,6 @@ body {
   user-select: none;
   position: relative;
 }
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.header .title {
-  font-size: 15px;
-  font-weight: 600;
-}
-.header .updated {
-  font-size: 10px;
-  color: var(--vscode-descriptionForeground);
-}
 .section {
   margin-bottom: 16px;
   border-top: 1px solid var(--vscode-panel-border);
@@ -133,25 +119,6 @@ body {
   padding: 8px 0;
   text-align: center;
 }
-.refresh-btn {
-  background: none;
-  border: 1px solid var(--vscode-panel-border);
-  color: var(--vscode-editor-foreground);
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.refresh-btn:hover {
-  background: var(--vscode-toolbar-hoverBackground);
-}
-.refresh-btn:active {
-  background: var(--vscode-toolbar-activeBackground);
-}
 .radio-link-group {
   display: inline-flex;
   border: 1px solid var(--vscode-panel-border);
@@ -177,28 +144,6 @@ body {
   color: var(--vscode-editor-background);
   font-weight: 600;
   cursor: default;
-}
-.action-bar {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--vscode-panel-border);
-}
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--vscode-textLink-foreground);
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-}
-.action-btn:hover {
-  text-decoration: underline;
 }
 .error-container {
   display: flex;
@@ -253,10 +198,6 @@ body {
 <div class="loading-overlay" id="loading-overlay">
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loading-text">Loading...</div>
-</div>
-<div class="header">
-  <span class="title" id="header-title">GLM Coding Plan Usage</span>
-  <button class="refresh-btn" id="refresh-btn" onclick="doRefresh()">&#x21bb;</button>
 </div>
 <div class="updated" id="header-updated" style="margin-bottom:10px;font-size:10px;color:var(--vscode-descriptionForeground)"></div>
 
@@ -313,17 +254,6 @@ body {
 </div>
 
 <div class="no-data" id="no-data"></div>
-
-<div class="action-bar">
-  <button class="action-btn" id="settings-btn">
-    <span>⚙️</span>
-    <span id="settings-label">Settings</span>
-  </button>
-  <button class="action-btn" id="apikey-btn">
-    <span>🔑</span>
-    <span id="apikey-label">Configure API Key</span>
-  </button>
-</div>
 
 <script src="${echartsSrc}"></script>
 <script>
@@ -817,7 +747,7 @@ let currentChartType = 'bar';
     for (var i = 0; i < quotas.length; i++) {
       var q = quotas[i];
       html += '<div class="quota-item">';
-      html += '<div class="section-title"><span>' + esc(q.label) + '</span><span class="stat-suffix" style="color:' + q.color + '">' + q.percentage.toFixed(1) + '%</span></div>';
+      html += '<div class="section-title"><div class="section-title-row"><span>' + esc(q.label) + '</span><span class="stat-suffix" style="color:' + q.color + '">' + q.percentage.toFixed(1) + '%</span></div></div>';
       html += '<div class="quota-bar-outer"><div class="quota-bar-inner" style="width:' + q.percentage + '%;background:' + q.color + '"></div></div>';
       html += '<div class="quota-meta"><span>' + esc(loc.nextReset || 'Next reset') + ': <span class="quota-value">' + esc(q.nextReset) + '</span></span></div>';
       if (q.currentUsage !== undefined && q.total !== undefined) {
@@ -854,11 +784,8 @@ let currentChartType = 'bar';
 
     document.getElementById('no-data').style.display = 'none';
 
-    document.getElementById('header-title').textContent = loc.title || 'GLM Coding Plan Usage';
-    document.getElementById('header-updated').textContent = (loc.updated || 'Updated') + ': ' + (data.updated || '');
-    document.getElementById('refresh-btn').title = loc.refresh || 'Refresh';
-    document.getElementById('settings-label').textContent = loc.settings || 'Settings';
-    document.getElementById('apikey-label').textContent = loc.configureApiKey || 'Configure API Key';
+    var levelPrefix = data.level ? data.level + ' · ' : '';
+    document.getElementById('header-updated').textContent = levelPrefix + (loc.updated || 'Updated') + ': ' + (data.updated || '');
 
     // Set metric toggle labels from locale
     var todayTokensBtn = document.getElementById('today-metric-tokens');
@@ -988,19 +915,6 @@ let currentChartType = 'bar';
     });
   }
   addTodayChartTypeToggleHandler();
-
-  window.doRefresh = function() {
-    showLoading(loc.loading || 'Loading...');
-    vscodeApi.postMessage({ command: 'refresh' });
-  };
-
-  document.getElementById('settings-btn').addEventListener('click', function() {
-    vscodeApi.postMessage({ command: 'openSettings' });
-  });
-
-  document.getElementById('apikey-btn').addEventListener('click', function() {
-    vscodeApi.postMessage({ command: 'setToken' });
-  });
 
   document.getElementById('day-range-select').addEventListener('click', function(e) {
     var btn = e.target.closest('.radio-link');
