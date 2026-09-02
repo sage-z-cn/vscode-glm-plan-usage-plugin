@@ -73,5 +73,8 @@
   "Loading...": "加载中...",
   "{0} has been reset": "{0}已刷新",
   "Bar": "柱状图",
-  "Line": "折线图"
+  "Line": "折线图",
+  "Token unit switched to {0}": "词元单位已切换为{0}",
+  "English units (K/M)": "英文单位（K/M）",
+  "Chinese units (万/亿)": "中文单位（万/亿）"
 }

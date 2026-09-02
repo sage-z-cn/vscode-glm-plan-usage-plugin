@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import { ConfigManager } from '../config';
 
 export function getHtmlTemplate(echartsUri: vscode.Uri): string {
     const echartsSrc = echartsUri.toString();
+    // webview 内联图表格式化的初始词元单位（si = K/M，chinese = 万/亿）
+    const initialTokenUnit = ConfigManager.getTokenUnit();
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -266,6 +269,21 @@ body {
   let currentRange = '7';
   let currentMetric = 'tokens';
 let currentChartType = 'bar';
+  // 词元计数单位，初始值由扩展宿主注入，收到 updateData 消息时覆盖
+  var tokenUnit = ${JSON.stringify(initialTokenUnit)};
+
+  // 数值格式化（token 与 calls 轴共用）：si 保持原有 K/M 缩写，
+  // chinese 分档为 万/亿，统一保留 1 位小数
+  function formatTokens(v, unit) {
+    if (unit === 'chinese') {
+      if (v >= 100000000) { return (v / 100000000).toFixed(1) + '亿'; }
+      if (v >= 10000) { return (v / 10000).toFixed(1) + '万'; }
+      return v;
+    }
+    if (v >= 1000000) { return (v / 1000000).toFixed(1) + 'M'; }
+    if (v >= 1000) { return (v / 1000).toFixed(1) + 'K'; }
+    return v;
+  }
 
   function showLoading(text) {
     var overlay = document.getElementById('loading-overlay');
@@ -515,7 +533,7 @@ let currentChartType = 'bar';
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 9, color: c.text, formatter: metric === 'calls' ? function(v) { return v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } : function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } },
+        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatTokens(v, tokenUnit); } },
         splitLine: { lineStyle: { color: c.grid } }
       },
       series: series,
@@ -555,13 +573,13 @@ let currentChartType = 'bar';
                   result += (callVal !== null && callVal !== '-' && callVal !== undefined) ? callVal : '--';
                 } else {
                   result += (tokenVal !== null && tokenVal !== '-' && tokenVal !== undefined)
-                    ? (tokenVal >= 1000000 ? (tokenVal/1000000).toFixed(1)+'M' : tokenVal >= 1000 ? (tokenVal/1000).toFixed(1)+'K' : tokenVal)
+                    ? formatTokens(tokenVal, tokenUnit)
                     : '--';
                 }
               } else {
                 // Total 或模型 series：显示 token，Total 再附加 call
                 if (tokenVal !== null && tokenVal !== '-' && tokenVal !== undefined) {
-                  result += (tokenVal >= 1000000 ? (tokenVal/1000000).toFixed(1)+'M' : tokenVal >= 1000 ? (tokenVal/1000).toFixed(1)+'K' : tokenVal);
+                  result += formatTokens(tokenVal, tokenUnit);
                 } else {
                   result += '--';
                 }
@@ -681,7 +699,7 @@ let currentChartType = 'bar';
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 9, color: c.text, formatter: metric === 'calls' ? function(v) { return v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } : function(v) { return v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v >= 1000 ? (v/1000).toFixed(1)+'K' : v; } },
+        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatTokens(v, tokenUnit); } },
         splitLine: { lineStyle: { color: c.grid } }
       },
       series: series,
@@ -715,7 +733,7 @@ let currentChartType = 'bar';
             result += '<br/>' + p.marker + p.seriesName + ': ';
             // Token value
             if (tokenVal !== null && tokenVal !== undefined) {
-              result += (tokenVal >= 1000000 ? (tokenVal/1000000).toFixed(1)+'M' : tokenVal >= 1000 ? (tokenVal/1000).toFixed(1)+'K' : tokenVal);
+              result += formatTokens(tokenVal, tokenUnit);
             } else {
               result += '--';
             }
@@ -941,6 +959,9 @@ let currentChartType = 'bar';
       }
       if (msg.todayChartType) {
         currentChartType = msg.todayChartType;
+      }
+      if (msg.tokenUnit === 'si' || msg.tokenUnit === 'chinese') {
+        tokenUnit = msg.tokenUnit;
       }
       updateUI(msg.data);
     } else if (msg && msg.command === 'showError') {

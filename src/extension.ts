@@ -133,6 +133,24 @@ export async function activate(context: vscode.ExtensionContext) {
         }
     );
 
+    const toggleTokenUnitCommand = vscode.commands.registerCommand(
+        'glmPlanUsage.toggleTokenUnit',
+        async () => {
+            const next = ConfigManager.getTokenUnit() === 'si' ? 'chinese' : 'si';
+            await vscode.workspace.getConfiguration('glmPlanUsage')
+                .update('tokenUnit', next, vscode.ConfigurationTarget.Global);
+            const unitName = next === 'si'
+                ? vscode.l10n.t('English units (K/M)')
+                : vscode.l10n.t('Chinese units (万/亿)');
+            vscode.window.showInformationMessage(vscode.l10n.t('Token unit switched to {0}', unitName));
+            // 配置变更会触发 handleConfigChange：autoRefresh 开启时经 queryUsage 重发侧边栏数据；
+            // 关闭时不会重发，这里复用 queryUsage（优先命中缓存）确保侧边栏立即按新单位渲染
+            if (!ConfigManager.getAutoRefresh()) {
+                await queryUsage();
+            }
+        }
+    );
+
     const setTokenCommand = vscode.commands.registerCommand(
         'glmPlanUsage.setToken',
         async () => {
@@ -152,6 +170,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(queryCommand);
     context.subscriptions.push(setTokenCommand);
     context.subscriptions.push(openSettingsCommand);
+    context.subscriptions.push(toggleTokenUnitCommand);
     context.subscriptions.push(statusBarManager);
     context.subscriptions.push(autoRefreshManager);
     context.subscriptions.push(

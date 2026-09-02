@@ -140,7 +140,19 @@ export function formatRemainingTimeCompact(nextResetTime: number | undefined): s
     }
 }
 
-export function formatTokens(tokens: number): string {
+/** 词元计数显示单位：si = 英制 K/M，chinese = 中文 万/亿 */
+export type TokenUnit = 'si' | 'chinese';
+
+export function formatTokens(tokens: number, unit: TokenUnit = 'si'): string {
+    if (unit === 'chinese') {
+        if (tokens >= 100000000) {
+            return `${(tokens / 100000000).toFixed(1)}亿`;
+        }
+        if (tokens >= 10000) {
+            return `${(tokens / 10000).toFixed(1)}万`;
+        }
+        return tokens.toString();
+    }
     if (tokens >= 1000000) {
         return `${(tokens / 1000000).toFixed(2)}M`;
     }

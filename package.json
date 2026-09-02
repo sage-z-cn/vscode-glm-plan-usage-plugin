@@ -69,6 +69,12 @@
         "command": "glmPlanUsage.openSettings",
         "title": "%command.openSettings.title%",
         "icon": "$(gear)"
+      },
+      {
+        "command": "glmPlanUsage.toggleTokenUnit",
+        "title": "%command.toggleTokenUnit.title%",
+        "description": "%command.toggleTokenUnit.description%",
+        "icon": "$(symbol-unit)"
       }
     ],
     "menus": {
@@ -84,8 +90,13 @@
           "when": "view == glmPlanUsage.usageStats"
         },
         {
+          "command": "glmPlanUsage.toggleTokenUnit",
+          "group": "1_actions@1",
+          "when": "view == glmPlanUsage.usageStats"
+        },
+        {
           "command": "glmPlanUsage.openSettings",
-          "group": "navigation@3",
+          "group": "1_actions@2",
           "when": "view == glmPlanUsage.usageStats"
         }
       ]
@@ -138,6 +149,19 @@
           "type": "boolean",
           "default": true,
           "description": "%configuration.resetNotification.description%"
+        },
+        "glmPlanUsage.tokenUnit": {
+          "type": "string",
+          "enum": [
+            "si",
+            "chinese"
+          ],
+          "enumDescriptions": [
+            "%configuration.tokenUnit.enum.si%",
+            "%configuration.tokenUnit.enum.chinese%"
+          ],
+          "default": "si",
+          "description": "%configuration.tokenUnit.description%"
         }
       }
     }

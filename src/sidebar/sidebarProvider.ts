@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { UsageResponse } from '../types';
+import { ConfigManager } from '../config';
 import { transformResponse, SidebarData } from './dataTransformer';
 import { getHtmlTemplate } from './htmlTemplate';
 
@@ -87,7 +88,8 @@ localResourceRoots: [
         const data: SidebarData = transformResponse(response);
         const dayRange = this._context.globalState.get<string>('glmPlanUsage.dayRange', '7');
         const todayChartType = this._context.globalState.get<string>('glmPlanUsage.todayChartType', 'bar');
-        this._view?.webview.postMessage({ command: 'updateData', data, dayRange, todayChartType });
+        const tokenUnit = ConfigManager.getTokenUnit();
+        this._view?.webview.postMessage({ command: 'updateData', data, dayRange, todayChartType, tokenUnit });
     }
 
     private disposeView(): void {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { UsageResponse } from '../types';
 import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from '../constants';
+import { ConfigManager } from '../config';
 import { formatTokens, formatResetTime, formatDateTimeOnly } from '../statusBar/formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate, calculateMonthlyEstimate } from '../statusBar/usageEstimate';
 import { filterTodayData, filterTodayDataByModel, aggregateDailyData, aggregateDailyDataByModel, aggregateDailyCalls, aggregateDailyCallsByModel, getPeakToken, getPeakCalls } from '../statusBar/tooltipBuilder';
@@ -119,6 +120,7 @@ export interface SidebarData {
 
 export function transformResponse(response: UsageResponse): SidebarData {
     const now = new Date();
+    const tokenUnit = ConfigManager.getTokenUnit();
 
     const quotas: QuotaItem[] = [];
 
@@ -176,7 +178,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
         }));
 
         today = {
-            totalTokens: formatTokens(todayData.totalTokens),
+            totalTokens: formatTokens(todayData.totalTokens, tokenUnit),
             totalCalls: String(todayData.totalCalls),
             peakToken: '',
             peakCalls: '',
@@ -188,7 +190,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
 
         const peakT = getPeakToken(todayData);
         if (peakT) {
-            today.peakToken = `${vscode.l10n.t('Peak')} ${formatTokens(peakT.tokens)}@${peakT.time}`;
+            today.peakToken = `${vscode.l10n.t('Peak')} ${formatTokens(peakT.tokens, tokenUnit)}@${peakT.time}`;
             today.peakTokenValue = peakT.tokens;
             today.peakTokenIndex = peakT.index;
         }
@@ -220,7 +222,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
                     dates: md.dates.slice(-7),
                     tokens: md.tokens.slice(-7),
                     calls: callsSlice,
-                    total: formatTokens(md.tokens.slice(-7).reduce((sum, t) => sum + t, 0))
+                    total: formatTokens(md.tokens.slice(-7).reduce((sum, t) => sum + t, 0), tokenUnit)
                 };
             }).filter(md => md.tokens.some(t => t > 0));
             
@@ -228,7 +230,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
                 dates: last7.map(d => d.date),
                 tokens: last7.map(d => d.tokens),
                 calls: last7Calls,
-                total: formatTokens(last7Total),
+                total: formatTokens(last7Total, tokenUnit),
                 totalCalls: String(last7CallsTotal),
                 models: last7Models.length > 0 ? last7Models : undefined
             };
@@ -253,7 +255,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
                         dates: md.dates,
                         tokens: md.tokens,
                         calls: modelCalls,
-                        total: formatTokens(md.tokens.reduce((sum, t) => sum + t, 0))
+                        total: formatTokens(md.tokens.reduce((sum, t) => sum + t, 0), tokenUnit)
                     };
                 }).filter(md => md.tokens.some(t => t > 0));
                 
@@ -261,7 +263,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
                     dates: monthData.map(d => d.date),
                     tokens: monthData.map(d => d.tokens),
                     calls: monthCalls,
-                    total: formatTokens(allTotal),
+                    total: formatTokens(allTotal, tokenUnit),
                     totalCalls: String(allCallsTotal),
                     models: monthModels.length > 0 ? monthModels : undefined
                 };
@@ -272,7 +274,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
                 dates: dailyData.map(d => d.date),
                 tokens: dailyData.map(d => d.tokens),
                 calls: dailyCalls,
-                total: formatTokens(dailyData.reduce((sum, d) => sum + d.tokens, 0))
+                total: formatTokens(dailyData.reduce((sum, d) => sum + d.tokens, 0), tokenUnit)
             };
         }
     }
@@ -281,7 +283,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
 
     return {
         level,
-        updated: now.toLocaleString(),
+        updated: now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
         locales: {
             todayUsage: vscode.l10n.t('Today Usage'),
             dailyUsage: vscode.l10n.t('Daily Usage'),

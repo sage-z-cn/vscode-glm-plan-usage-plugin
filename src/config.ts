@@ -37,6 +37,12 @@ export class ConfigManager {
         return Math.max(interval, 60);
     }
 
+    /** 获取词元计数显示单位（si = 英制 K/M，chinese = 中文 万/亿），默认 si */
+    static getTokenUnit(): 'si' | 'chinese' {
+        const config = vscode.workspace.getConfiguration(this.CONFIG_SECTION);
+        return config.get<'si' | 'chinese'>('tokenUnit') ?? 'si';
+    }
+
     static async setAuthToken(token: string): Promise<void> {
         if (this.secrets) {
             if (token) {

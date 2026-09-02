@@ -18,6 +18,7 @@
 - **趋势图表**：Unicode 柱状图展示每小时使用趋势
 - **配额预警**：使用率 ≥ 90% 自动通知
 - **高峰期标记**：周一至周五 14:00–18:00（UTC+8）高峰期时，状态栏用量文本尾部显示闪电图标
+- **词元单位切换**：用量数字可在 K/M 与 万/亿 之间切换（侧边栏 "..." 菜单）
 - **自动刷新** · **多平台**（智谱/Z.ai）· **中英双语** · **API Key 加密存储**
 
 ### 界面预览
@@ -86,6 +87,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Trend Chart**: Unicode bar chart for hourly usage trends
 - **Quota Warning**: Auto notification at ≥90%
 - **Peak Hours Indicator**: During peak hours (Mon–Fri 14:00–18:00 UTC+8), a lightning bolt icon appears at the end of the status bar usage text
+- **Token Unit Toggle**: Switch usage numbers between K/M and Chinese units (万/亿) via the sidebar "..." menu
 - **Auto Refresh** · **Multi-Platform** (ZHIPU/Z.ai) · **i18n (EN/中文)** · **Encrypted API Key Storage**
 
 ### UI Preview
