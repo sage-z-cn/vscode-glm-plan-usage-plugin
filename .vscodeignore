@@ -15,3 +15,5 @@ AGENTS.md
 pnpm-lock.yaml
 .omo
 scripts
+.opencode
+.codegraph
