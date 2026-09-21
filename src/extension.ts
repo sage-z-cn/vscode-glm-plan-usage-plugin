@@ -46,6 +46,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
         if (!forceRefresh) {
             const cached = cache.get();
             if (cached) {
+                UsageQueryService.rememberUsage(cached);
                 statusBarManager.updateUsage(cached);
                 sidebarProvider.update(cached);
                 await quotaWarningChecker.check(cached);
@@ -54,6 +55,7 @@ async function queryUsage(forceRefresh = false): Promise<void> {
         }
 
         const response = await UsageQueryService.queryUsage();
+        UsageQueryService.rememberUsage(response);
         cache.set(response);
         statusBarManager.updateUsage(response);
         sidebarProvider.update(response);
@@ -101,7 +103,7 @@ export async function activate(context: vscode.ExtensionContext) {
     cache = new UsageCache(context.globalState);
     quotaWarningChecker = new QuotaWarningChecker(context.globalState);
 
-    sidebarProvider = new SidebarProvider(context);
+    sidebarProvider = new SidebarProvider(context, () => queryUsage(true));
 
     autoRefreshManager = new AutoRefreshManager(
         statusBarManager,

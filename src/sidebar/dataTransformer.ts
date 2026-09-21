@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
-import { UsageResponse } from '../types';
+import { UsageResponse, TokenActivityData } from '../types';
 import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY, QUOTA_TYPE_MCP } from '../constants';
 import { ConfigManager } from '../config';
 import { formatTokens, formatResetTime, formatDateTimeOnly } from '../statusBar/formatters';
 import { calculate5HourEstimate, calculateWeeklyEstimate, calculateMonthlyEstimate } from '../statusBar/usageEstimate';
-import { filterTodayData, filterTodayDataByModel, aggregateDailyData, aggregateDailyDataByModel, aggregateDailyCalls, aggregateDailyCallsByModel, getPeakToken, getPeakCalls } from '../statusBar/tooltipBuilder';
+import { filterTodayData, filterTodayDataByModel, filterDayData, filterDayDataByModel, aggregateDailyData, aggregateDailyDataByModel, aggregateDailyCalls, aggregateDailyCallsByModel, getPeakToken, getPeakCalls } from '../statusBar/tooltipBuilder';
+import { DAY_USAGE_RANGE_DAYS } from '../usageQuery';
 
 function colorForPercentage(pct: number): string {
     if (pct >= 90) { return '#F44747'; }
@@ -84,6 +85,20 @@ export interface DailyData {
 export interface SidebarLocales {
     todayUsage: string;
     dailyUsage: string;
+    todayTokens: string;
+    todayCalls: string;
+    rangeTokens: string;
+    rangeCalls: string;
+    todayLabel: string;
+    usageOnDate: string;
+    dayTokens: string;
+    dayCalls: string;
+    tokenActivity: string;
+    lifetimeTokens: string;
+    peakTokens: string;
+    currentStreak: string;
+    longestStreak: string;
+    days: string;
     tokens: string;
     calls: string;
     noData: string;
@@ -106,6 +121,30 @@ export interface SidebarLocales {
     Sat: string;
     barChart: string;
     lineChart: string;
+    tooltipTokenUnit: string;
+    tooltipToolCalls: string;
+}
+
+/** Token 活动热力图单日格子（无数据日也会生成 level=0 空格） */
+export interface TokenActivityCell {
+    date: string;
+    displayDate: string;
+    totalTokens: number;
+    toolCalls: number;
+    level: 0 | 1 | 2 | 3 | 4;
+}
+
+export interface TokenActivityView {
+    totalTokens: string;
+    peakTokens: string;
+    peakDate: string | null;
+    currentStreakDays: number;
+    longestStreakDays: number;
+    maxTokens: number;
+    /** 按接口 series 展开的日格子；热力图宽度由 webview 动态计算周数后从日历补齐空格 */
+    cells: TokenActivityCell[];
+    /** Intl 语言，webview 侧补空格 tooltip/月份标签时复用 */
+    lang: string;
 }
 
 export interface SidebarData {
@@ -116,6 +155,171 @@ export interface SidebarData {
     today: TodayData | null;
     week: DailyData | null;
     month: DailyData | null;
+    activity: TokenActivityView | null;
+    /** 近 30 天按日预切片，供今日用量日期切换本地渲染 */
+    usageByDay: Record<string, TodayData>;
+    dayUsageMeta: {
+        todayDate: string;
+        minDate: string;
+        maxDate: string;
+    };
+}
+
+function formatDateKeyLocal(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function shiftDateKey(dateKey: string, days: number): string {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const date = new Date(y, (m || 1) - 1, d || 1);
+    date.setDate(date.getDate() + days);
+    return formatDateKeyLocal(date);
+}
+
+/** 优先使用更密的时间序列（小时级 trend），否则退回 30 日窗口数据 */
+function pickDaySlice(response: UsageResponse, dateKey: string) {
+    const candidates = [] as Array<{ totalTokens: number; totalCalls: number; xTime: string[]; yValue: (number | null)[]; modelCallCount: (number | null)[]; models: ReturnType<typeof filterDayDataByModel> }>;
+    if (response.trend) {
+        candidates.push({ ...filterDayData(response.trend, dateKey), models: filterDayDataByModel(response.trend, dateKey) });
+    }
+    if (response.monthTrend) {
+        candidates.push({ ...filterDayData(response.monthTrend, dateKey), models: filterDayDataByModel(response.monthTrend, dateKey) });
+    }
+    if (candidates.length === 0) {
+        return null;
+    }
+    let best = candidates[0];
+    for (const item of candidates) {
+        if (item.xTime.length > best.xTime.length) {
+            best = item;
+        }
+    }
+    return best;
+}
+
+function buildTodayDataFromDaySlice(
+    slice: { totalTokens: number; totalCalls: number; xTime: string[]; yValue: (number | null)[]; modelCallCount: (number | null)[]; models: ReturnType<typeof filterDayDataByModel> },
+    tokenUnit: 'si' | 'chinese'
+): TodayData {
+    const todayModels = (slice.models || []).map(md => ({
+        model: md.model,
+        xTime: md.xTime,
+        yValue: md.yValue,
+        callCount: md.callCount
+    }));
+
+    const data: TodayData = {
+        totalTokens: formatTokens(slice.totalTokens, tokenUnit),
+        totalCalls: String(slice.totalCalls),
+        peakToken: '',
+        peakCalls: '',
+        xTime: slice.xTime,
+        yValue: slice.yValue,
+        callCount: slice.modelCallCount,
+        models: todayModels.length > 0 ? todayModels : undefined
+    };
+
+    const peakT = getPeakToken(slice);
+    if (peakT) {
+        data.peakToken = `${vscode.l10n.t('Peak')} ${formatTokens(peakT.tokens, tokenUnit)}@${peakT.time}`;
+        data.peakTokenValue = peakT.tokens;
+        data.peakTokenIndex = peakT.index;
+    }
+    const peakC = getPeakCalls(slice);
+    if (peakC) {
+        data.peakCalls = `${vscode.l10n.t('Peak')} ${peakC.calls}@${peakC.time}`;
+    }
+    return data;
+}
+
+function parseDateKey(dateKey: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(dateKey);
+    if (!match) {
+        return null;
+    }
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (!year || month < 1 || month > 12 || day < 1 || day > 31) {
+        return null;
+    }
+    return new Date(year, month - 1, day);
+}
+
+function levelForTokens(tokens: number, maxTokens: number): 0 | 1 | 2 | 3 | 4 {
+    if (tokens <= 0 || maxTokens <= 0) {
+        return 0;
+    }
+    const ratio = tokens / maxTokens;
+    if (ratio <= 0.25) {
+        return 1;
+    }
+    if (ratio <= 0.5) {
+        return 2;
+    }
+    if (ratio <= 0.75) {
+        return 3;
+    }
+    return 4;
+}
+
+/** 热力图 tooltip 日期：中文「2026年9月18日」，英文 September 18, 2026 */
+function formatActivityCellDate(dateKey: string, lang: string): string {
+    const date = parseDateKey(dateKey);
+    if (!date) {
+        return dateKey;
+    }
+    try {
+        return new Intl.DateTimeFormat(lang || 'zh-CN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(date);
+    } catch {
+        return dateKey;
+    }
+}
+
+function buildTokenActivityView(
+    activity: TokenActivityData,
+    tokenUnit: 'si' | 'chinese'
+): TokenActivityView | null {
+    if (!activity) {
+        return null;
+    }
+
+    const lang = vscode.env.language || 'zh-CN';
+    let maxTokens = activity.summary.peakDailyTokens || 0;
+    const cells: TokenActivityCell[] = [];
+    for (const day of activity.series) {
+        const totalTokens = day.totalTokens || 0;
+        if (totalTokens > maxTokens) {
+            maxTokens = totalTokens;
+        }
+        cells.push({
+            date: day.date,
+            displayDate: formatActivityCellDate(day.date, lang),
+            totalTokens,
+            toolCalls: day.mcpCalls || 0,
+            level: 0
+        });
+    }
+    const levelBase = maxTokens || 1;
+    for (const cell of cells) {
+        cell.level = levelForTokens(cell.totalTokens, levelBase);
+    }
+
+    return {
+        totalTokens: formatTokens(activity.summary.totalTokens, tokenUnit),
+        peakTokens: formatTokens(activity.summary.peakDailyTokens, tokenUnit),
+        peakDate: activity.summary.peakDailyTokensDate || null,
+        currentStreakDays: activity.summary.currentStreakDays,
+        longestStreakDays: activity.summary.longestStreakDays,
+        maxTokens,
+        cells,
+        lang
+    };
 }
 
 export function transformResponse(response: UsageResponse): SidebarData {
@@ -280,13 +484,52 @@ export function transformResponse(response: UsageResponse): SidebarData {
     }
 
     const level = (response.level || '').toUpperCase();
+    const activity = response.tokenActivity
+        ? buildTokenActivityView(response.tokenActivity, tokenUnit)
+        : null;
+
+    const todayDate = formatDateKeyLocal(new Date());
+    const minDate = shiftDateKey(todayDate, -(DAY_USAGE_RANGE_DAYS - 1));
+    const usageByDay: Record<string, TodayData> = {};
+    for (let offset = 0; offset < DAY_USAGE_RANGE_DAYS; offset++) {
+        const dateKey = shiftDateKey(todayDate, -offset);
+        if (dateKey < minDate) {
+            break;
+        }
+        const slice = pickDaySlice(response, dateKey);
+        usageByDay[dateKey] = buildTodayDataFromDaySlice(
+            slice ?? {
+                totalTokens: 0,
+                totalCalls: 0,
+                xTime: [],
+                yValue: [],
+                modelCallCount: [],
+                models: []
+            },
+            tokenUnit
+        );
+    }
 
     return {
         level,
         updated: now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
         locales: {
             todayUsage: vscode.l10n.t('Today Usage'),
-            dailyUsage: vscode.l10n.t('Daily Usage'),
+            dailyUsage: vscode.l10n.t('Recent Usage'),
+            todayTokens: vscode.l10n.t('Today Tokens'),
+            todayCalls: vscode.l10n.t('Today Calls'),
+            rangeTokens: vscode.l10n.t('{0}d Tokens'),
+            rangeCalls: vscode.l10n.t('{0}d Calls'),
+            todayLabel: vscode.l10n.t('Today'),
+            usageOnDate: vscode.l10n.t('Usage on {0}'),
+            dayTokens: vscode.l10n.t('{0} Tokens'),
+            dayCalls: vscode.l10n.t('{0} Calls'),
+            tokenActivity: vscode.l10n.t('Token Activity'),
+            lifetimeTokens: vscode.l10n.t('Lifetime Tokens'),
+            peakTokens: vscode.l10n.t('Peak Tokens'),
+            currentStreak: vscode.l10n.t('Current Streak'),
+            longestStreak: vscode.l10n.t('Longest Streak'),
+            days: vscode.l10n.t('d'),
             tokens: vscode.l10n.t('Tokens'),
             calls: vscode.l10n.t('Calls'),
             noData: vscode.l10n.t('No data available'),
@@ -309,10 +552,19 @@ export function transformResponse(response: UsageResponse): SidebarData {
             Sat: vscode.l10n.t('Sat'),
             barChart: vscode.l10n.t('Bar'),
             lineChart: vscode.l10n.t('Line'),
+            tooltipTokenUnit: vscode.l10n.t('tokens'),
+            tooltipToolCalls: vscode.l10n.t('tool calls'),
         },
         quotas,
         today,
         week,
         month,
+        activity,
+        usageByDay,
+        dayUsageMeta: {
+            todayDate,
+            minDate,
+            maxDate: todayDate
+        }
     };
 }

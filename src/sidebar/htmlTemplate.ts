@@ -151,6 +151,22 @@ body {
   font-weight: 600;
   cursor: default;
 }
+.day-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.day-nav-select {
+  max-width: 120px;
+  font-size: 10px;
+  padding: 2px 4px;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  font-family: inherit;
+  cursor: pointer;
+}
 .error-container {
   display: flex;
   flex-direction: column;
@@ -198,6 +214,167 @@ body {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
 }
+.activity-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+.activity-stat {
+  min-width: 0;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  background: var(--vscode-editorWidget-background, transparent);
+}
+.activity-stat-value-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+.activity-stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--vscode-editor-foreground);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-stat-date {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.activity-stat-date:empty {
+  display: none;
+}
+.activity-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 1.25;
+  min-width: 0;
+}
+.activity-stat-label-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.activity-stat-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--vscode-descriptionForeground);
+  border-radius: 50%;
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 500;
+  cursor: help;
+  user-select: none;
+  opacity: 0.85;
+}
+.activity-stat-help:empty,
+.activity-stat-help.hidden {
+  display: none;
+}
+.activity-heatmap-wrap {
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px 8px 8px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  background: var(--vscode-editorWidget-background, transparent);
+}
+.activity-heatmap-grid {
+  display: inline-grid;
+  grid-template-columns: auto;
+  gap: 0;
+  width: 100%;
+}
+.activity-heatmap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.activity-heatmap-months {
+  display: grid;
+  height: 12px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  line-height: 12px;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+.activity-heatmap-month-label {
+  overflow: visible;
+  white-space: nowrap;
+  min-width: 0;
+}
+.activity-heatmap-weeks {
+  display: flex;
+  gap: 3px;
+}
+.activity-heatmap-week {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.activity-heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+.activity-heatmap-cell.level-0 {
+  opacity: 0.4;
+}
+.activity-heatmap-tooltip {
+  position: fixed;
+  z-index: 1000;
+  display: none;
+  pointer-events: none;
+  max-width: 240px;
+  padding: 8px 10px;
+  border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+  border-radius: 6px;
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  color: var(--vscode-editor-foreground);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.activity-heatmap-tooltip.show {
+  display: block;
+}
+.activity-heatmap-tooltip-date {
+  color: var(--vscode-editor-foreground);
+  font-weight: 500;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+.activity-heatmap-tooltip-meta {
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -221,6 +398,9 @@ body {
     <div class="section-title-row">
       <span id="today-section-title"></span>
       <span class="section-title-actions">
+        <span class="day-nav">
+          <select id="day-nav-select" class="day-nav-select"></select>
+        </span>
         <span class="radio-link-group" id="today-chart-type-select">
           <span id="today-chart-bar" class="radio-link active" data-value="bar">Bar</span>
           <span id="today-chart-line" class="radio-link" data-value="line">Line</span>
@@ -231,9 +411,19 @@ body {
         </span>
       </span>
     </div>
-    <div class="section-stats-row">
-      <span class="stat-suffix" id="today-tokens-wrap"><span id="today-tokens-label"></span>: <span id="today-tokens">--</span></span>
-      <span class="stat-suffix" id="today-calls-wrap"><span id="today-calls-label"></span>: <span id="today-calls">--</span></span>
+  </div>
+  <div class="activity-summary">
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="today-tokens">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="today-tokens-label"></span>
+      </div>
+    </div>
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="today-calls">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="today-calls-label"></span>
+      </div>
     </div>
   </div>
   <div id="today-chart" class="chart-container"></div>
@@ -251,12 +441,65 @@ body {
         </span>
       </span>
     </div>
-    <div class="section-stats-row">
-      <span class="stat-suffix" id="week-total"></span>
-      <span class="stat-suffix" id="week-total-calls"></span>
+  </div>
+  <div class="activity-summary">
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="week-tokens">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="week-tokens-label"></span>
+      </div>
+    </div>
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="week-calls">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="week-calls-label"></span>
+      </div>
     </div>
   </div>
   <div id="week-chart" class="chart-container" style="height:200px"></div>
+</div>
+
+<div class="section" id="activity-section" style="display:none">
+  <div class="section-title">
+    <div class="section-title-row">
+      <span id="activity-section-title"></span>
+    </div>
+  </div>
+  <div class="activity-summary">
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="activity-total">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="activity-total-label"></span>
+      </div>
+    </div>
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="activity-peak">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="activity-peak-label"></span>
+        <span class="activity-stat-help" id="activity-peak-help" title="" tabindex="0" aria-label="Peak date">?</span>
+      </div>
+    </div>
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="activity-current-streak">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="activity-current-streak-label"></span>
+      </div>
+    </div>
+    <div class="activity-stat">
+      <div class="activity-stat-value" id="activity-longest-streak">--</div>
+      <div class="activity-stat-label">
+        <span class="activity-stat-label-text" id="activity-longest-streak-label"></span>
+      </div>
+    </div>
+  </div>
+  <div class="activity-heatmap-wrap">
+    <div id="activity-heatmap"></div>
+  </div>
+</div>
+
+<div class="activity-heatmap-tooltip" id="activity-tooltip">
+  <div class="activity-heatmap-tooltip-date" id="activity-tooltip-date"></div>
+  <div class="activity-heatmap-tooltip-meta" id="activity-tooltip-meta"></div>
 </div>
 
 <div class="no-data" id="no-data"></div>
@@ -274,6 +517,13 @@ body {
 let currentChartType = 'bar';
   // 词元计数单位，初始值由扩展宿主注入，收到 updateData 消息时覆盖
   var tokenUnit = ${JSON.stringify(initialTokenUnit)};
+  var activityData = null;
+  var lastActivityWeekCount = 0;
+  var selectedDayDate = null;
+  var sidebarPayload = null;
+  var dayUsageByDate = {};
+  var dayUsageMeta = null;
+  var dayRolloverInFlight = false;
 
   // 数值格式化（token 与 calls 轴共用）：si 保持原有 K/M 缩写，
   // chinese 分档为 万/亿，统一保留 1 位小数
@@ -795,6 +1045,300 @@ let currentChartType = 'bar';
     section.innerHTML = html;
   }
 
+  function activityLevelColor(level) {
+    if (level <= 0) {
+      return isDark() ? '#3a3a3a' : '#e6e6e6';
+    }
+    var darkPalette = ['#0e4429', '#006d32', '#26a641', '#39d353'];
+    var lightPalette = ['#9be9a8', '#40c463', '#30a14e', '#216e39'];
+    var palette = isDark() ? darkPalette : lightPalette;
+    return palette[Math.min(3, level - 1)];
+  }
+
+  function activityLang() {
+    return (activityData && activityData.lang) || loc.__lang || navigator.language || 'zh-CN';
+  }
+
+  function pad2(n) {
+    return n < 10 ? '0' + n : String(n);
+  }
+
+  function formatDateKeyLocal(date) {
+    return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+  }
+
+  function startOfWeekSunday(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - date.getDay());
+  }
+
+  function formatActivityDate(dateKey) {
+    var parts = String(dateKey || '').split('-');
+    if (parts.length !== 3) {
+      return dateKey || '';
+    }
+    var y = Number(parts[0]);
+    var m = Number(parts[1]);
+    var d = Number(parts[2]);
+    if (!y || !m || !d) {
+      return dateKey;
+    }
+    try {
+      return new Intl.DateTimeFormat(activityLang(), {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(new Date(y, m - 1, d));
+    } catch (e) {
+      return dateKey;
+    }
+  }
+
+  function formatMonthLabel(date) {
+    try {
+      return new Intl.DateTimeFormat(activityLang(), { month: 'short' }).format(date);
+    } catch (e) {
+      return String(date.getMonth() + 1);
+    }
+  }
+
+  /** 按 webview 实际宽度计算热力图能完整放下多少周（含无数据空格） */
+  function calcVisibleActivityWeekCount() {
+    var wrap = document.querySelector('.activity-heatmap-wrap');
+    var cellSize = 12;
+    var cellGap = 3;
+    var padX = 16;
+    var borderX = 2;
+    var width = wrap && wrap.clientWidth ? wrap.clientWidth : 280;
+    var usable = width - padX - borderX;
+    if (usable < cellSize) {
+      return 1;
+    }
+    var weeks = Math.floor((usable + cellGap) / (cellSize + cellGap));
+    // 最多约一年（53 周），避免超宽窗口拉爆 DOM
+    return Math.max(1, Math.min(53, weeks));
+  }
+
+  /** 从今天所在周往前排满 weekCount 周；无数据日也生成空格 */
+  function buildActivityCalendar(weekCount) {
+    var byDate = {};
+    var cells = (activityData && activityData.cells) || [];
+    for (var i = 0; i < cells.length; i++) {
+      byDate[cells[i].date] = cells[i];
+    }
+
+    var endSunday = startOfWeekSunday(new Date());
+    var weeks = [];
+    var monthLabels = [];
+    var lastMonth = -1;
+
+    for (var wi = 0; wi < weekCount; wi++) {
+      var weekStart = new Date(endSunday);
+      weekStart.setDate(weekStart.getDate() - (weekCount - 1 - wi) * 7);
+
+      var mid = new Date(weekStart);
+      mid.setDate(mid.getDate() + 3);
+      var midMonth = mid.getMonth();
+      if (midMonth !== lastMonth) {
+        monthLabels.push({ weekIndex: wi, label: formatMonthLabel(mid) });
+        lastMonth = midMonth;
+      }
+
+      var weekDays = [];
+      for (var di = 0; di < 7; di++) {
+        var cellDate = new Date(weekStart);
+        cellDate.setDate(cellDate.getDate() + di);
+        var key = formatDateKeyLocal(cellDate);
+        var source = byDate[key];
+        if (source) {
+          weekDays.push(source);
+        } else {
+          weekDays.push({
+            date: key,
+            displayDate: formatActivityDate(key),
+            totalTokens: 0,
+            toolCalls: 0,
+            level: 0,
+            empty: true
+          });
+        }
+      }
+      weeks.push(weekDays);
+    }
+
+    return { weeks: weeks, monthLabels: monthLabels };
+  }
+
+  function renderActivityHeatmap() {
+    if (!activityData) {
+      return;
+    }
+
+    var weekCount = calcVisibleActivityWeekCount();
+    lastActivityWeekCount = weekCount;
+    var calendar = buildActivityCalendar(weekCount);
+    var weeks = calendar.weeks;
+    var monthLabels = calendar.monthLabels;
+
+    var cellSize = 12;
+    var monthHtml = '';
+    var labelByWeek = {};
+    for (var li = 0; li < monthLabels.length; li++) {
+      labelByWeek[monthLabels[li].weekIndex] = monthLabels[li].label;
+    }
+    for (var wi = 0; wi < weekCount; wi++) {
+      var monthLabel = labelByWeek[wi] || '';
+      monthHtml += '<div class="activity-heatmap-month-label">' + esc(monthLabel) + '</div>';
+    }
+
+    var weeksHtml = '';
+    for (var w = 0; w < weeks.length; w++) {
+      var weekDays = weeks[w];
+      var cellsHtml = '';
+      for (var ci = 0; ci < 7; ci++) {
+        var cell = weekDays[ci];
+        var tokensText = formatTokens(cell.totalTokens || 0, tokenUnit);
+        var toolCalls = cell.toolCalls || 0;
+        var displayDate = cell.displayDate || formatActivityDate(cell.date);
+        var tooltipMeta = tokensText + ' ' + (loc.tooltipTokenUnit || 'tokens') +
+          ' · ' + toolCalls + ' ' + (loc.tooltipToolCalls || 'tool calls');
+        var level = cell.level || 0;
+        cellsHtml += '<div class="activity-heatmap-cell level-' + level + '"' +
+          ' data-date="' + esc(cell.date) + '"' +
+          ' data-display-date="' + esc(displayDate) + '"' +
+          ' data-tooltip-meta="' + esc(tooltipMeta) + '"' +
+          ' style="background:' + activityLevelColor(level) + '"></div>';
+      }
+      weeksHtml += '<div class="activity-heatmap-week">' + cellsHtml + '</div>';
+    }
+
+    var heatmap = document.getElementById('activity-heatmap');
+    if (!heatmap) {
+      return;
+    }
+    heatmap.innerHTML =
+      '<div class="activity-heatmap-grid">' +
+        '<div class="activity-heatmap-body">' +
+          '<div class="activity-heatmap-months" style="grid-template-columns:repeat(' + weekCount + ', ' + cellSize + 'px)">' + monthHtml + '</div>' +
+          '<div class="activity-heatmap-weeks">' + weeksHtml + '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function updateActivity(activity) {
+    var section = document.getElementById('activity-section');
+    if (!section) return;
+    if (!activity) {
+      activityData = null;
+      section.style.display = 'none';
+      return;
+    }
+
+    activityData = activity;
+    section.style.display = '';
+    document.getElementById('activity-section-title').textContent = loc.tokenActivity || 'Token Activity';
+    document.getElementById('activity-total-label').textContent = loc.lifetimeTokens || 'Lifetime Tokens';
+    document.getElementById('activity-peak-label').textContent = loc.peakTokens || 'Peak Tokens';
+    document.getElementById('activity-current-streak-label').textContent = loc.currentStreak || 'Current Streak';
+    document.getElementById('activity-longest-streak-label').textContent = loc.longestStreak || 'Longest Streak';
+
+    var dayUnit = loc.days || 'd';
+    document.getElementById('activity-total').textContent = activity.totalTokens || '--';
+    document.getElementById('activity-peak').textContent = activity.peakTokens || '--';
+    var peakHelp = document.getElementById('activity-peak-help');
+    if (peakHelp) {
+      if (activity.peakDate) {
+        peakHelp.textContent = '?';
+        peakHelp.title = activity.peakDate;
+        peakHelp.setAttribute('aria-label', activity.peakDate);
+        peakHelp.classList.remove('hidden');
+      } else {
+        peakHelp.textContent = '';
+        peakHelp.title = '';
+        peakHelp.classList.add('hidden');
+      }
+    }
+    document.getElementById('activity-current-streak').textContent =
+      (activity.currentStreakDays ?? 0) + ' ' + dayUnit;
+    document.getElementById('activity-longest-streak').textContent =
+      (activity.longestStreakDays ?? 0) + ' ' + dayUnit;
+
+    renderActivityHeatmap();
+  }
+
+  function hideActivityTooltip() {
+    var tip = document.getElementById('activity-tooltip');
+    if (tip) {
+      tip.classList.remove('show');
+    }
+  }
+
+  function positionActivityTooltip(clientX, clientY) {
+    var tip = document.getElementById('activity-tooltip');
+    if (!tip || !tip.classList.contains('show')) {
+      return;
+    }
+    var offset = 12;
+    var rect = tip.getBoundingClientRect();
+    var left = clientX + offset;
+    var top = clientY + offset;
+    var maxLeft = window.innerWidth - rect.width - 8;
+    var maxTop = window.innerHeight - rect.height - 8;
+    if (left > maxLeft) {
+      left = Math.max(8, clientX - rect.width - offset);
+    }
+    if (top > maxTop) {
+      top = Math.max(8, clientY - rect.height - offset);
+    }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function showActivityTooltip(cellEl, clientX, clientY) {
+    var tip = document.getElementById('activity-tooltip');
+    var dateEl = document.getElementById('activity-tooltip-date');
+    var metaEl = document.getElementById('activity-tooltip-meta');
+    if (!tip || !dateEl || !metaEl || !cellEl) {
+      return;
+    }
+    dateEl.textContent = cellEl.getAttribute('data-display-date') || cellEl.getAttribute('data-date') || '';
+    metaEl.textContent = cellEl.getAttribute('data-tooltip-meta') || '';
+    tip.classList.add('show');
+    positionActivityTooltip(clientX, clientY);
+  }
+
+  function bindActivityTooltip() {
+    var host = document.getElementById('activity-heatmap');
+    if (!host || host.__tooltipBound) {
+      return;
+    }
+    host.__tooltipBound = true;
+    host.addEventListener('mouseover', function(e) {
+      var cell = e.target && e.target.closest ? e.target.closest('.activity-heatmap-cell') : null;
+      if (!cell || !cell.getAttribute('data-date')) {
+        hideActivityTooltip();
+        return;
+      }
+      showActivityTooltip(cell, e.clientX, e.clientY);
+    });
+    host.addEventListener('mousemove', function(e) {
+      var cell = e.target && e.target.closest ? e.target.closest('.activity-heatmap-cell') : null;
+      if (!cell || !cell.getAttribute('data-date')) {
+        return;
+      }
+      var tip = document.getElementById('activity-tooltip');
+      if (tip && !tip.classList.contains('show')) {
+        showActivityTooltip(cell, e.clientX, e.clientY);
+      } else {
+        positionActivityTooltip(e.clientX, e.clientY);
+      }
+    });
+    host.addEventListener('mouseleave', function() {
+      hideActivityTooltip();
+    });
+  }
+
+  bindActivityTooltip();
+
   function esc(s) {
     if (!s) return '';
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -826,15 +1370,27 @@ let currentChartType = 'bar';
 
     updateQuotas(data.quotas);
 
+    sidebarPayload = data;
+    dayUsageByDate = data.usageByDay || {};
+    var prevSelected = selectedDayDate;
+    var prevMeta = dayUsageMeta;
+    var nextMeta = data.dayUsageMeta || null;
+    dayUsageMeta = nextMeta;
+
+    // 过了 0 点：若用户停留在「今天」，跟随新的今天，避免长时间仍显示昨天
+    if (nextMeta && prevMeta && prevSelected && prevSelected === prevMeta.todayDate) {
+      selectedDayDate = nextMeta.todayDate;
+    } else if (!selectedDayDate || (nextMeta && selectedDayDate > nextMeta.maxDate)) {
+      selectedDayDate = nextMeta ? nextMeta.todayDate : null;
+    } else if (nextMeta && selectedDayDate < nextMeta.minDate) {
+      selectedDayDate = nextMeta.minDate;
+    }
+
     var todaySection = document.getElementById('today-section');
-    if (data.today) {
+    if (data.today || hasAnyDayUsage()) {
       todaySection.style.display = '';
-      document.getElementById('today-section-title').textContent = loc.todayUsage || 'Today Usage';
-      document.getElementById('today-tokens-label').textContent = loc.tokens || 'Tokens';
-      document.getElementById('today-calls-label').textContent = loc.calls || 'Calls';
-      document.getElementById('today-tokens').textContent = data.today.totalTokens;
-      document.getElementById('today-calls').textContent = data.today.totalCalls;
-      initTodayChart(data.today, currentMetric, currentChartType);
+      setupDayNav();
+      renderSelectedDayUsage();
     } else {
       todaySection.style.display = 'none';
     }
@@ -850,6 +1406,273 @@ let currentChartType = 'bar';
       weekSection.style.display = 'none';
       storedData = null;
     }
+
+    updateActivity(data.activity);
+  }
+
+  function hasAnyDayUsage() {
+    if (!dayUsageMeta) {
+      return !!(sidebarPayload && sidebarPayload.today);
+    }
+    return Object.keys(dayUsageByDate || {}).length > 0;
+  }
+
+  function formatDateDisplay(dateKey) {
+    if (!dateKey) {
+      return '';
+    }
+    var parts = dateKey.split('-');
+    if (parts.length !== 3) {
+      return dateKey;
+    }
+    try {
+      return new Intl.DateTimeFormat(navigator.language || 'zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])));
+    } catch (e) {
+      return dateKey;
+    }
+  }
+
+  function formatDateShort(dateKey) {
+    if (!dateKey) {
+      return '';
+    }
+    var parts = dateKey.split('-');
+    if (parts.length !== 3) {
+      return dateKey;
+    }
+    var month = Number(parts[1]);
+    var day = Number(parts[2]);
+    var weekday = '';
+    try {
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      weekday = new Intl.DateTimeFormat(navigator.language || 'zh-CN', { weekday: 'short' }).format(d);
+    } catch (e) {
+      weekday = '';
+    }
+    var lang = navigator.language || '';
+    if (/[\\u4e00-\\u9fff]/.test(lang)) {
+      var base = month + '月' + day + '日';
+      return weekday ? base + ' ' + weekday : base;
+    }
+    var en = parts[1] + '-' + parts[2];
+    return weekday ? en + ' ' + weekday : en;
+  }
+
+  function isTodayDateKey(dateKey) {
+    return !!(dayUsageMeta && dateKey === dayUsageMeta.todayDate);
+  }
+
+  function clampDayDate(dateKey) {
+    if (!dayUsageMeta) {
+      return dateKey;
+    }
+    if (dateKey < dayUsageMeta.minDate) {
+      return dayUsageMeta.minDate;
+    }
+    if (dateKey > dayUsageMeta.maxDate) {
+      return dayUsageMeta.maxDate;
+    }
+    return dateKey;
+  }
+
+  function shiftDayDate(dateKey, days) {
+    var parts = String(dateKey || '').split('-');
+    if (parts.length !== 3) {
+      return dateKey;
+    }
+    var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    date.setDate(date.getDate() + days);
+    var pad = function(n) { return n < 10 ? '0' + n : String(n); };
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+
+  function setupDayNav() {
+    var select = document.getElementById('day-nav-select');
+    if (!select || !dayUsageMeta) {
+      return;
+    }
+
+    var options = [];
+    var cursor = dayUsageMeta.maxDate;
+    while (cursor && cursor >= dayUsageMeta.minDate) {
+      options.push(cursor);
+      cursor = shiftDayDate(cursor, -1);
+    }
+
+    var html = '';
+    for (var i = 0; i < options.length; i++) {
+      var dateKey = options[i];
+      var label = formatDateShort(dateKey);
+      var selected = dateKey === selectedDayDate ? ' selected' : '';
+      html += '<option value="' + esc(dateKey) + '"' + selected + '>' + esc(label) + '</option>';
+    }
+    select.innerHTML = html;
+    select.value = selectedDayDate || dayUsageMeta.todayDate;
+
+    if (select.__dayNavBound) {
+      return;
+    }
+    select.__dayNavBound = true;
+    select.addEventListener('change', function() {
+      onDaySelect(select.value);
+    });
+  }
+
+  function onDaySelect(dateKey) {
+    if (!dateKey || !dayUsageMeta) {
+      return;
+    }
+    var nextDate = clampDayDate(dateKey);
+    if (nextDate === selectedDayDate) {
+      setupDayNav();
+      return;
+    }
+    selectedDayDate = nextDate;
+    setupDayNav();
+    renderSelectedDayUsage();
+  }
+
+  function resolveDaySlice(dateKey) {
+    if (!dateKey) {
+      return null;
+    }
+    if (dayUsageByDate && dayUsageByDate[dateKey]) {
+      return dayUsageByDate[dateKey];
+    }
+    if (sidebarPayload && sidebarPayload.today && dayUsageMeta && dateKey === dayUsageMeta.todayDate) {
+      return sidebarPayload.today;
+    }
+    return null;
+  }
+
+  function applyDaySliceToUI(dateKey, slice) {
+    var titleEl = document.getElementById('today-section-title');
+    var tokensLabel = document.getElementById('today-tokens-label');
+    var callsLabel = document.getElementById('today-calls-label');
+    var tokensEl = document.getElementById('today-tokens');
+    var callsEl = document.getElementById('today-calls');
+    if (!titleEl) {
+      return;
+    }
+
+    var isToday = isTodayDateKey(dateKey);
+    var shortDate = formatDateShort(dateKey);
+    var fullDate = formatDateDisplay(dateKey);
+
+    if (isToday) {
+      titleEl.textContent = loc.todayUsage || 'Today Usage';
+      tokensLabel.textContent = loc.todayTokens || 'Today Tokens';
+      callsLabel.textContent = loc.todayCalls || 'Today Calls';
+    } else {
+      titleEl.textContent = (loc.usageOnDate || 'Usage on {0}').split('{0}').join(shortDate || fullDate || dateKey);
+      tokensLabel.textContent = (loc.dayTokens || '{0} Tokens').split('{0}').join(shortDate || dateKey);
+      callsLabel.textContent = (loc.dayCalls || '{0} Calls').split('{0}').join(shortDate || dateKey);
+    }
+
+    if (!slice) {
+      tokensEl.textContent = '--';
+      callsEl.textContent = '--';
+      if (todayChart) {
+        todayChart.clear();
+      }
+      return;
+    }
+
+    tokensEl.textContent = slice.totalTokens || '0';
+    callsEl.textContent = slice.totalCalls || '0';
+    initTodayChart(slice, currentMetric, currentChartType);
+  }
+
+  function renderSelectedDayUsage() {
+    if (!selectedDayDate) {
+      return;
+    }
+    var slice = resolveDaySlice(selectedDayDate);
+    if (slice) {
+      applyDaySliceToUI(selectedDayDate, slice);
+      return;
+    }
+
+    applyDaySliceToUI(selectedDayDate, null);
+    vscodeApi.postMessage({ command: 'requestDayUsage', date: selectedDayDate });
+  }
+
+  function formatRawDaySlice(dateKey, raw) {
+    if (!raw) {
+      return null;
+    }
+    return {
+      totalTokens: formatTokens(raw.totalTokens || 0, tokenUnit),
+      totalCalls: String(raw.totalCalls || 0),
+      xTime: raw.xTime || [],
+      yValue: raw.yValue || [],
+      callCount: raw.callCount || [],
+      models: (raw.models || []).map(function(m) {
+        return {
+          model: m.model,
+          xTime: m.xTime || [],
+          yValue: m.yValue || [],
+          callCount: m.callCount || []
+        };
+      })
+    };
+  }
+
+  function getLocalDateKey(date) {
+    var pad = function(n) { return n < 10 ? '0' + n : String(n); };
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+
+  /**
+   * 侧栏长时间挂起时检测本地日期是否已过 0 点：
+   * - 用户停在「今天」→ 切到新的今天
+   * - 本地更新可用日期窗口，并向宿主请求当日数据 / 触发刷新
+   */
+  function checkDayRollover() {
+    var localToday = getLocalDateKey(new Date());
+    if (!dayUsageMeta || !selectedDayDate) {
+      return;
+    }
+    if (localToday === dayUsageMeta.todayDate) {
+      return;
+    }
+
+    var wasOnToday = selectedDayDate === dayUsageMeta.todayDate;
+    dayUsageMeta = {
+      todayDate: localToday,
+      maxDate: localToday,
+      minDate: shiftDayDate(localToday, -6)
+    };
+    if (wasOnToday || selectedDayDate > localToday) {
+      selectedDayDate = localToday;
+    } else if (selectedDayDate < dayUsageMeta.minDate) {
+      selectedDayDate = dayUsageMeta.minDate;
+    }
+
+    setupDayNav();
+    renderSelectedDayUsage();
+
+    if (!dayRolloverInFlight) {
+      dayRolloverInFlight = true;
+      vscodeApi.postMessage({ command: 'dayRollover', date: localToday });
+    }
+  }
+
+  setInterval(checkDayRollover, 60 * 1000);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      checkDayRollover();
+    }
+  });
+  window.addEventListener('focus', checkDayRollover);
+
+  function formatRangeStatLabel(template, rangeDays) {
+    var text = template || '';
+    return text.split('{0}').join(String(rangeDays));
   }
 
   function renderDailyChart() {
@@ -857,13 +1680,14 @@ let currentChartType = 'bar';
     var d = currentRange === '30' ? storedData.month : storedData.week;
     if (!d) { d = storedData.week || storedData.month; }
     if (!d) return;
-    document.getElementById('week-section-title').textContent = loc.dailyUsage || 'Daily Usage';
-    document.getElementById('week-total').textContent = (loc.tokens || 'Tokens') + ': ' + d.total;
-    if (d.totalCalls) {
-      document.getElementById('week-total-calls').textContent = (loc.calls || 'Calls') + ': ' + d.totalCalls;
-    } else {
-      document.getElementById('week-total-calls').textContent = '';
-    }
+    var rangeDays = currentRange === '30' ? 30 : 7;
+    document.getElementById('week-section-title').textContent = loc.dailyUsage || 'Recent Usage';
+    document.getElementById('week-tokens-label').textContent =
+      formatRangeStatLabel(loc.rangeTokens || '{0}d Tokens', rangeDays);
+    document.getElementById('week-calls-label').textContent =
+      formatRangeStatLabel(loc.rangeCalls || '{0}d Calls', rangeDays);
+    document.getElementById('week-tokens').textContent = d.total || '--';
+    document.getElementById('week-calls').textContent = d.totalCalls || '--';
     initWeekChart(d, currentRange === '30', currentMetric);
   }
 
@@ -883,9 +1707,8 @@ let currentChartType = 'bar';
     if (metric === currentMetric) return;
     currentMetric = metric;
     syncMetricToggleUI();
-    // Re-render today chart if data available
-    if (storedData && storedData.today) {
-      initTodayChart(storedData.today, currentMetric, currentChartType);
+    if (sidebarPayload) {
+      renderSelectedDayUsage();
     }
     // Re-render week chart if data available
     renderDailyChart();
@@ -908,8 +1731,8 @@ let currentChartType = 'bar';
     currentChartType = chartType;
     syncTodayChartTypeUI();
     vscodeApi.postMessage({ command: 'saveTodayChartType', value: chartType });
-    if (storedData && storedData.today) {
-      initTodayChart(storedData.today, currentMetric, currentChartType);
+    if (sidebarPayload) {
+      renderSelectedDayUsage();
     }
   }
 
@@ -967,12 +1790,30 @@ let currentChartType = 'bar';
         tokenUnit = msg.tokenUnit;
       }
       updateUI(msg.data);
+    } else if (msg && msg.command === 'dayUsage') {
+      hideLoading();
+      dayRolloverInFlight = false;
+      if (msg.date && msg.raw) {
+        var slice = formatRawDaySlice(msg.date, msg.raw);
+        if (slice) {
+          dayUsageByDate[msg.date] = slice;
+        }
+        if (selectedDayDate === msg.date) {
+          applyDaySliceToUI(msg.date, slice);
+        }
+      } else if (msg.date && selectedDayDate === msg.date) {
+        applyDaySliceToUI(msg.date, null);
+      }
+    } else if (msg && msg.command === 'refreshComplete') {
+      dayRolloverInFlight = false;
     } else if (msg && msg.command === 'showError') {
       hideLoading();
+      dayRolloverInFlight = false;
       document.getElementById('error-section').style.display = '';
       document.getElementById('quota-section').style.display = 'none';
       document.getElementById('today-section').style.display = 'none';
       document.getElementById('week-section').style.display = 'none';
+      document.getElementById('activity-section').style.display = 'none';
       document.getElementById('no-data').style.display = 'none';
       document.getElementById('error-message').textContent = msg.error;
     } else if (msg && msg.command === 'loading') {
@@ -983,11 +1824,20 @@ let currentChartType = 'bar';
   var observer = new ResizeObserver(function() {
     if (todayChart) todayChart.resize();
     if (weekChart) weekChart.resize();
+    // 热力图按 webview 宽度动态排周，侧栏拉伸后需重算
+    if (activityData) {
+      var nextWeeks = calcVisibleActivityWeekCount();
+      if (nextWeeks !== lastActivityWeekCount) {
+        renderActivityHeatmap();
+      }
+    }
   });
   var tc = document.getElementById('today-chart');
   var wc = document.getElementById('week-chart');
+  var aw = document.querySelector('.activity-heatmap-wrap');
   if (tc) observer.observe(tc);
   if (wc) observer.observe(wc);
+  if (aw) observer.observe(aw);
 
   vscodeApi.postMessage({ command: 'ready' });
 })();

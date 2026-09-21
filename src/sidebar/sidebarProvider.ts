@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { UsageResponse } from '../types';
 import { ConfigManager } from '../config';
+import { UsageQueryService } from '../usageQuery';
 import { transformResponse, SidebarData } from './dataTransformer';
 import { getHtmlTemplate } from './htmlTemplate';
 
@@ -11,7 +12,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     private _disposables: vscode.Disposable[] = [];
 
     constructor(
-        private readonly _context: vscode.ExtensionContext
+        private readonly _context: vscode.ExtensionContext,
+        /** 跨 0 点等场景由侧栏触发一次全量刷新 */
+        private readonly _requestRefresh?: () => Promise<void>
     ) {}
 
     resolveWebviewView(
@@ -44,6 +47,18 @@ localResourceRoots: [
                     this._context.globalState.update('glmPlanUsage.dayRange', msg.value);
                 } else if (msg.command === 'saveTodayChartType') {
                     this._context.globalState.update('glmPlanUsage.todayChartType', msg.value);
+                } else if (msg.command === 'requestDayUsage') {
+                    await this.handleDayUsageRequest(msg.date);
+                } else if (msg.command === 'dayRollover') {
+                    // 过了 0 点：通知宿主刷新，避免配额/趋势仍停在昨天
+                    if (this._requestRefresh) {
+                        try {
+                            await this._requestRefresh();
+                        } catch (error) {
+                            console.warn('[GPU] Day rollover refresh failed:', error);
+                        }
+                    }
+                    this._view?.webview.postMessage({ command: 'refreshComplete' });
                 }
             })
         );
@@ -55,6 +70,20 @@ localResourceRoots: [
                 }
             })
         );
+    }
+
+    private async handleDayUsageRequest(date: string): Promise<void> {
+        if (!this._view || !date) {
+            return;
+        }
+        try {
+            const raw = await UsageQueryService.queryDayUsage(date);
+            this._view.webview.postMessage({ command: 'dayUsage', date, raw });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn('[GPU] Day usage request failed:', message);
+            this._view.webview.postMessage({ command: 'dayUsage', date, raw: null, error: message });
+        }
     }
 
     private flushPending(): void {
