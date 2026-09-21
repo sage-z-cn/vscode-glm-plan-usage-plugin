@@ -155,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
             await vscode.workspace.getConfiguration('glmPlanUsage')
                 .update('tokenUnit', next, vscode.ConfigurationTarget.Global);
             const unitName = next === 'si'
-                ? vscode.l10n.t('English units (K/M)')
+                ? vscode.l10n.t('English units (K/M/B)')
                 : vscode.l10n.t('Chinese units (万/亿)');
             vscode.window.showInformationMessage(vscode.l10n.t('Token unit switched to {0}', unitName));
             // 配置变更会触发 handleConfigChange：autoRefresh 开启时经 queryUsage 重发侧边栏数据；

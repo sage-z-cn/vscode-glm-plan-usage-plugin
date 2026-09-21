@@ -525,15 +525,17 @@ let currentChartType = 'bar';
   var dayUsageMeta = null;
   var dayRolloverInFlight = false;
 
-  // 数值格式化（token 与 calls 轴共用）：si 保持原有 K/M 缩写，
-  // chinese 分档为 万/亿，统一保留 1 位小数
+  // 数值格式化（token 与 calls 轴共用）：si = K/M/B（千/百万/十亿），
+  // chinese 分档为 万/亿；小数位与宿主 formatTokens 保持一致
   function formatTokens(v, unit) {
     if (unit === 'chinese') {
       if (v >= 100000000) { return (v / 100000000).toFixed(1) + '亿'; }
       if (v >= 10000) { return (v / 10000).toFixed(1) + '万'; }
       return v;
     }
-    if (v >= 1000000) { return (v / 1000000).toFixed(1) + 'M'; }
+    // si: B（十亿）/ M（百万）/ K（千）
+    if (v >= 1000000000) { return (v / 1000000000).toFixed(2) + 'B'; }
+    if (v >= 1000000) { return (v / 1000000).toFixed(2) + 'M'; }
     if (v >= 1000) { return (v / 1000).toFixed(1) + 'K'; }
     return v;
   }

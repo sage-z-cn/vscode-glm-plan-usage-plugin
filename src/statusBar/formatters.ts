@@ -173,6 +173,10 @@ export function formatTokens(tokens: number, unit: TokenUnit = 'si'): string {
         }
         return tokens.toString();
     }
+    // si: B（十亿）/ M（百万）/ K（千）
+    if (tokens >= 1000000000) {
+        return `${(tokens / 1000000000).toFixed(2)}B`;
+    }
     if (tokens >= 1000000) {
         return `${(tokens / 1000000).toFixed(2)}M`;
     }
