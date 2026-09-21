@@ -14,7 +14,8 @@
 - **状态栏点击**：点击刷新配额数据；悬停提示中的"刷新数据"和"查看详情"为可点击链接
 - **MCP 用量**：每月 MCP 工具调用配额监控，含进度条与用量预估（用量为0时不显示）
 - **使用预估**：基于当前消耗速率预测配额使用情况（使用量 ≥ 50% 时显示）
-- **今日统计**：Token 用量、调用次数、峰值数据
+- **今日统计**：Token 用量、调用次数、峰值数据；支持切换查看近 7 天任意一天
+- **Token 活动**：近期用量下方展示个人套餐同款 Token 活动热力图（数据来自 `credit-usage/activity` 接口）
 - **趋势图表**：Unicode 柱状图展示每小时使用趋势
 - **配额预警**：使用率 ≥ 90% 自动通知
 - **高峰期标记**：周一至周五 14:00–18:00（UTC+8）高峰期时，状态栏用量文本尾部显示闪电图标
@@ -83,7 +84,8 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Status Bar Click**: Click to refresh quota data; "Refresh data" and "View details" in the hover tooltip are clickable links
 - **MCP Usage**: Monthly MCP tool call quota monitoring with progress bar & usage estimate (hidden when usage is 0)
 - **Usage Estimate**: Predict quota usage based on current consumption rate (shown when usage ≥ 50%)
-- **Today Stats**: Token usage, call count, peak data
+- **Today Stats**: Token usage, call count, peak data; switch to any day within the last 7 days
+- **Token Activity**: GitHub-style Token activity heatmap below Recent Usage (same `credit-usage/activity` data source as Coding Plan personal plan)
 - **Trend Chart**: Unicode bar chart for hourly usage trends
 - **Quota Warning**: Auto notification at ≥90%
 - **Peak Hours Indicator**: During peak hours (Mon–Fri 14:00–18:00 UTC+8), a lightning bolt icon appears at the end of the status bar usage text
