@@ -44,6 +44,41 @@ export function filterTodayData(trend: TrendData): {
     return { totalTokens, totalCalls, xTime: todayXTime, yValue: todayYValue, modelCallCount: todayModelCallCount };
 }
 
+/** 按日期（YYYY-MM-DD）从 trend 中切出单日用量 */
+export function filterDayData(trend: TrendData, dateKey: string): {
+    totalTokens: number;
+    totalCalls: number;
+    xTime: string[];
+    yValue: (number | null)[];
+    modelCallCount: (number | null)[];
+} {
+    const dayXTime: string[] = [];
+    const dayYValue: (number | null)[] = [];
+    const dayModelCallCount: (number | null)[] = [];
+    let totalTokens = 0;
+    let totalCalls = 0;
+
+    for (let i = 0; i < trend.xTime.length; i++) {
+        const timeStr = trend.xTime[i];
+        if (timeStr.startsWith(dateKey)) {
+            dayXTime.push(timeStr);
+            dayYValue.push(trend.yValue[i]);
+            dayModelCallCount.push(trend.modelCallCount[i]);
+
+            const tokenVal = trend.yValue[i];
+            if (tokenVal !== null && tokenVal !== undefined) {
+                totalTokens += tokenVal;
+            }
+            const callVal = trend.modelCallCount[i];
+            if (callVal !== null && callVal !== undefined) {
+                totalCalls += callVal;
+            }
+        }
+    }
+
+    return { totalTokens, totalCalls, xTime: dayXTime, yValue: dayYValue, modelCallCount: dayModelCallCount };
+}
+
 export function filterTodayDataByModel(trend: TrendData): { model: string; xTime: string[]; yValue: (number | null)[]; callCount: (number | null)[] }[] {
     if (!trend.modelDataList || trend.modelDataList.length === 0) {
         return [];
@@ -71,6 +106,34 @@ export function filterTodayDataByModel(trend: TrendData): { model: string; xTime
             xTime: todayXTime,
             yValue: todayYValue,
             callCount: todayCallCount
+        };
+    }).filter(m => m.xTime.length > 0 && m.yValue.some(v => v !== null && v !== undefined && v > 0));
+}
+
+export function filterDayDataByModel(trend: TrendData, dateKey: string): { model: string; xTime: string[]; yValue: (number | null)[]; callCount: (number | null)[] }[] {
+    if (!trend.modelDataList || trend.modelDataList.length === 0) {
+        return [];
+    }
+
+    return trend.modelDataList.map(modelTrend => {
+        const dayXTime: string[] = [];
+        const dayYValue: (number | null)[] = [];
+        const dayCallCount: (number | null)[] = [];
+
+        for (let i = 0; i < modelTrend.xTime.length; i++) {
+            const timeStr = modelTrend.xTime[i];
+            if (timeStr.startsWith(dateKey)) {
+                dayXTime.push(timeStr);
+                dayYValue.push(modelTrend.yValue[i]);
+                dayCallCount.push(modelTrend.callCount[i]);
+            }
+        }
+
+        return {
+            model: modelTrend.model,
+            xTime: dayXTime,
+            yValue: dayYValue,
+            callCount: dayCallCount
         };
     }).filter(m => m.xTime.length > 0 && m.yValue.some(v => v !== null && v !== undefined && v > 0));
 }

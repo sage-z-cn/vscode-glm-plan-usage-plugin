@@ -35,6 +35,28 @@ export interface ActiveDaysInfo {
     totalDaysInWindow: number;
 }
 
+/** Token 活动：按天的 credit-usage/activity 序列点 */
+export interface TokenActivityDay {
+    date: string;
+    totalTokens: number;
+    modelCallCount: number;
+    mcpCalls: number;
+}
+
+export interface TokenActivitySummary {
+    totalTokens: number;
+    peakDailyTokens: number;
+    peakDailyTokensDate: string | null;
+    totalUsageDurationMs: number;
+    currentStreakDays: number;
+    longestStreakDays: number;
+}
+
+export interface TokenActivityData {
+    summary: TokenActivitySummary;
+    series: TokenActivityDay[];
+}
+
 export interface UsageResponse {
     platform: Platform;
     modelUsage: ModelUsageData[];
@@ -43,6 +65,7 @@ export interface UsageResponse {
     trend?: TrendData;
     monthTrend?: TrendData;
     activeDaysInfo?: ActiveDaysInfo;
+    tokenActivity?: TokenActivityData;
     level?: string;
 }
 

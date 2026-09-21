@@ -5,7 +5,7 @@
  * for taking screenshots.
  */
 
-import { UsageResponse, TrendData, ModelTrendData, QuotaLimitData } from './types';
+import { UsageResponse, TrendData, QuotaLimitData, TokenActivityData } from './types';
 
 // Current time for realistic timestamps
 const now = new Date();
@@ -179,6 +179,63 @@ const quotaLimits: QuotaLimitData[] = [
     }
 ];
 
+// Mock Token Activity（个人套餐 credit-usage/activity 同款结构）
+function generateTokenActivity(days = 140): TokenActivityData {
+    const series: TokenActivityData['series'] = [];
+    let totalTokens = 0;
+    let peakDailyTokens = 0;
+    let peakDailyTokensDate: string | null = null;
+    let currentStreakDays = 0;
+    let longestStreakDays = 0;
+    let runStreak = 0;
+
+    for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateKey = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        // 约 20% 休息日无用量
+        const rest = Math.random() < 0.2;
+        const tokens = rest || isWeekend && Math.random() < 0.45
+            ? 0
+            : Math.floor(2_000_000 + Math.random() * 18_000_000);
+        const calls = tokens > 0 ? Math.floor(tokens / 28000) : 0;
+        const mcpCalls = tokens > 0 ? Math.floor(Math.random() * 40) : 0;
+
+        series.push({ date: dateKey, totalTokens: tokens, modelCallCount: calls, mcpCalls });
+        totalTokens += tokens;
+        if (tokens > peakDailyTokens) {
+            peakDailyTokens = tokens;
+            peakDailyTokensDate = dateKey;
+        }
+        if (tokens > 0) {
+            runStreak += 1;
+            if (runStreak > longestStreakDays) {
+                longestStreakDays = runStreak;
+            }
+            currentStreakDays = runStreak;
+        } else {
+            runStreak = 0;
+            currentStreakDays = 0;
+        }
+    }
+
+    return {
+        summary: {
+            totalTokens,
+            peakDailyTokens,
+            peakDailyTokensDate,
+            totalUsageDurationMs: Math.floor(totalTokens / 40),
+            currentStreakDays,
+            longestStreakDays
+        },
+        series
+    };
+}
+
+const tokenActivity = generateTokenActivity(140);
+
 // Calculate total tokens for model usage
 const totalTokensToday = hourlyTokens.reduce((a, b) => a + b, 0);
 
@@ -235,6 +292,7 @@ export const mockUsageResponse: UsageResponse = {
         activeDays: 22,
         totalDaysInWindow: 30
     },
+    tokenActivity,
     level: 'Pro'
 };
 
@@ -311,6 +369,7 @@ export {
     hourlyTrend,
     dailyTrend,
     quotaLimits,
+    tokenActivity,
     generateHourlyTimestamps,
     generateDailyTimestamps,
     MODELS
