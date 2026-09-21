@@ -5,6 +5,11 @@ import { UserActivityState } from '../enums';
 import { formatRemainingTimeCompact, getCombinedColor } from './formatters';
 import { isPeakNow, getNextPeakBoundary } from './peak';
 import { calculate5HourEstimate, calculateWeeklyEstimate } from './usageEstimate';
+import {
+    buildStatusBarTooltip,
+    buildStatusBarErrorTooltip,
+    buildStatusBarNotConfiguredTooltip
+} from './statusBarTooltip';
 
 export class StatusBarManager implements vscode.Disposable {
     private statusItem: vscode.StatusBarItem;
@@ -23,12 +28,8 @@ export class StatusBarManager implements vscode.Disposable {
 
         this.statusItem.command = 'glmPlanUsage.refresh';
         this.statusItem.text = '$(sync~spin) GLM: --';
-        // 悬停提示：两段均为命令链接，"刷新数据"触发刷新，"查看详情"打开侧栏并刷新
-        const refreshLink = `[${vscode.l10n.t('Refresh data')}](command:glmPlanUsage.refresh)`;
-        const detailsLink = `[${vscode.l10n.t('View details')}](command:glmPlanUsage.viewDetails)`;
-        const tooltip = new vscode.MarkdownString(`${refreshLink} | ${detailsLink}`);
-        tooltip.isTrusted = { enabledCommands: ['glmPlanUsage.refresh', 'glmPlanUsage.viewDetails'] };
-        this.statusItem.tooltip = tooltip;
+        // 极简 Tooltip：配额两行 + 刷新/详情各一行；数据到达后由 updateUsage 重写
+        this.statusItem.tooltip = buildStatusBarTooltip(null);
         this.statusItem.hide();
 
         this.outputChannel = vscode.window.createOutputChannel('GLM Plan Usage');
@@ -105,6 +106,7 @@ export class StatusBarManager implements vscode.Disposable {
             fiveHourPct,
             weeklyPct
         });
+        this.statusItem.tooltip = buildStatusBarTooltip(response);
         this.show();
     }
 
@@ -112,6 +114,7 @@ export class StatusBarManager implements vscode.Disposable {
         this.lastUsageResponse = undefined;
         this.statusItem.text = '$(error) GLM';
         this.statusItem.color = '#F44747';
+        this.statusItem.tooltip = buildStatusBarErrorTooltip(message);
         this.statusItem.show();
     }
 
@@ -119,6 +122,7 @@ export class StatusBarManager implements vscode.Disposable {
         this.lastUsageResponse = undefined;
         this.statusItem.text = '$(settings-gear) GLM';
         this.statusItem.color = undefined;
+        this.statusItem.tooltip = buildStatusBarNotConfiguredTooltip();
         this.statusItem.show();
     }
 

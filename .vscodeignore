@@ -10,7 +10,6 @@ tsconfig.json
 .claude
 .docs
 .sisyphus
-screenshots
 AGENTS.md
 pnpm-lock.yaml
 .omo

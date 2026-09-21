@@ -140,6 +140,26 @@ export function formatRemainingTimeCompact(nextResetTime: number | undefined): s
     }
 }
 
+/** 状态栏 Tooltip 重置倒计时：2d 3h / 5h 12m / 40m */
+export function formatResetCountdownForTooltip(nextResetTime: number | undefined): string {
+    if (!nextResetTime) { return '--'; }
+    const diff = nextResetTime - Date.now();
+    if (diff <= 0) { return '0m'; }
+
+    const totalMinutes = Math.floor(diff / 60000);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days >= 1) {
+        return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+    }
+    if (hours >= 1) {
+        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    return `${minutes}m`;
+}
+
 /** 词元计数显示单位：si = 英制 K/M，chinese = 中文 万/亿 */
 export type TokenUnit = 'si' | 'chinese';
 

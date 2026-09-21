@@ -11,7 +11,7 @@
 - **状态栏监控**：实时显示 5 小时/周配额百分比，颜色预警（🟥≥90% / 🟨70-89% / 🟩<70%），预估充裕时始终显示绿色
 - **侧边栏面板**：活动栏专属面板，展示完整用量统计、配额信息和趋势图表
 - **多模型统计**：按模型分类展示今日用量和 30 天使用趋势
-- **状态栏点击**：点击刷新配额数据；悬停提示中的"刷新数据"和"查看详情"为可点击链接
+- **状态栏点击**：点击刷新配额数据；悬停 Tooltip 显示 5h/周下次刷新时间（格式同侧栏，如 `5天18小时(09-27星期日08:52)`），「刷新数据 | 查看详情」为可点击链接
 - **MCP 用量**：每月 MCP 工具调用配额监控，含进度条与用量预估（用量为0时不显示）
 - **使用预估**：基于当前消耗速率预测配额使用情况（使用量 ≥ 50% 时显示）
 - **今日统计**：Token 用量、调用次数、峰值数据；支持切换查看近 7 天任意一天
@@ -26,11 +26,11 @@
 
 #### 状态栏
 
-![状态栏](https://raw.githubusercontent.com/sage-z-cn/vscode-glm-plan-usage-plugin/master/screenshots/statusbar-zh.png)
+![状态栏](screenshots/statusbar-zh.png)
 
 #### 侧边栏面板
 
-![侧边栏](https://raw.githubusercontent.com/sage-z-cn/vscode-glm-plan-usage-plugin/master/screenshots/sidebar-zh.png)
+![侧边栏](screenshots/sidebar-zh.png)
 
 ### 配置
 
@@ -81,7 +81,7 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 - **Status Bar**: Real-time 5h/weekly quota %, color-coded alerts (🟥≥90% / 🟡70-89% / 🟢<70%), always green when usage estimate is sufficient
 - **Sidebar Panel**: Dedicated activity bar panel with full usage stats, quota details, and trend charts
 - **Multi-Model Stats**: Per-model daily usage and 30-day usage trend display
-- **Status Bar Click**: Click to refresh quota data; "Refresh data" and "View details" in the hover tooltip are clickable links
+- **Status Bar Click**: Click to refresh quota data; hover tooltip shows 5h/weekly next-reset times in the same format as the sidebar (e.g. `5d 18h (09-27 Sun 08:52)`), with clickable "Refresh data | View details"
 - **MCP Usage**: Monthly MCP tool call quota monitoring with progress bar & usage estimate (hidden when usage is 0)
 - **Usage Estimate**: Predict quota usage based on current consumption rate (shown when usage ≥ 50%)
 - **Today Stats**: Token usage, call count, peak data; switch to any day within the last 7 days
@@ -96,11 +96,11 @@ Real-time monitoring of GLM Coding Plan quota usage in the status bar. Supports 
 
 #### Status Bar
 
-![Status Bar](https://raw.githubusercontent.com/sage-z-cn/vscode-glm-plan-usage-plugin/master/screenshots/statusbar-en.png)
+![Status Bar](screenshots/statusbar-en.png)
 
 #### Sidebar Panel
 
-![Sidebar](https://raw.githubusercontent.com/sage-z-cn/vscode-glm-plan-usage-plugin/master/screenshots/sidebar-en.png)
+![Sidebar](screenshots/sidebar-en.png)
 
 ### Configuration
 
