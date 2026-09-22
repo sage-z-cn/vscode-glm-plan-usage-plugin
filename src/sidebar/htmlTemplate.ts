@@ -271,27 +271,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.activity-stat-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--vscode-descriptionForeground);
-  border-radius: 50%;
-  color: var(--vscode-descriptionForeground);
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 500;
-  cursor: help;
-  user-select: none;
-  opacity: 0.85;
-}
-.activity-stat-help:empty,
-.activity-stat-help.hidden {
-  display: none;
-}
 .activity-heatmap-wrap {
   width: 100%;
   display: block;
@@ -473,10 +452,12 @@ body {
       </div>
     </div>
     <div class="activity-stat">
-      <div class="activity-stat-value" id="activity-peak">--</div>
+      <div class="activity-stat-value-row">
+        <span class="activity-stat-value" id="activity-peak">--</span>
+        <span class="activity-stat-date" id="activity-peak-date"></span>
+      </div>
       <div class="activity-stat-label">
         <span class="activity-stat-label-text" id="activity-peak-label"></span>
-        <span class="activity-stat-help" id="activity-peak-help" title="" tabindex="0" aria-label="Peak date">?</span>
       </div>
     </div>
     <div class="activity-stat">
@@ -1235,6 +1216,21 @@ let currentChartType = 'bar';
       return;
     }
 
+  function formatPeakDateInline(dateKey) {
+    if (!dateKey) {
+      return '';
+    }
+    var parts = String(dateKey).split('-');
+    if (parts.length !== 3) {
+      return dateKey;
+    }
+    var year = parts[0];
+    var monthDay = parts[1] + '-' + parts[2];
+    // 当年：MM-DD；跨年：YYYY-MM-DD
+    var currentYear = String(new Date().getFullYear());
+    return year === currentYear ? monthDay : (year + '-' + monthDay);
+  }
+
     activityData = activity;
     section.style.display = '';
     document.getElementById('activity-section-title').textContent = loc.tokenActivity || 'Token Activity';
@@ -1246,19 +1242,7 @@ let currentChartType = 'bar';
     var dayUnit = loc.days || 'd';
     document.getElementById('activity-total').textContent = activity.totalTokens || '--';
     document.getElementById('activity-peak').textContent = activity.peakTokens || '--';
-    var peakHelp = document.getElementById('activity-peak-help');
-    if (peakHelp) {
-      if (activity.peakDate) {
-        peakHelp.textContent = '?';
-        peakHelp.title = activity.peakDate;
-        peakHelp.setAttribute('aria-label', activity.peakDate);
-        peakHelp.classList.remove('hidden');
-      } else {
-        peakHelp.textContent = '';
-        peakHelp.title = '';
-        peakHelp.classList.add('hidden');
-      }
-    }
+    document.getElementById('activity-peak-date').textContent = formatPeakDateInline(activity.peakDate);
     document.getElementById('activity-current-streak').textContent =
       (activity.currentStreakDays ?? 0) + ' ' + dayUnit;
     document.getElementById('activity-longest-streak').textContent =
