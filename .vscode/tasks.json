@@ -42,7 +42,7 @@
     {
       "label": "build and install",
       "type": "shell",
-      "command": "npm run install",
+      "command": "npm run install-ext",
       "problemMatcher": [],
       "group": {
         "kind": "build",

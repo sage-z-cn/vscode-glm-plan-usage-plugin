@@ -173,7 +173,7 @@
     "lint": "eslint src --ext ts",
     "package": "node scripts/build.js",
     "publish": "node scripts/build.js --publish --install",
-    "install": "node scripts/build.js --install"
+    "install-ext": "node scripts/build.js --install"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
