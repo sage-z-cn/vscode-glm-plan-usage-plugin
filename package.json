@@ -171,9 +171,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
-    "package": "npm run compile && vsce package --out ./release/",
-    "publish": "npm run compile && npx @vscode/vsce publish",
-    "build-and-install": "node scripts/build-and-install.js"
+    "package": "node scripts/build.js",
+    "publish": "node scripts/build.js --publish --install",
+    "install": "node scripts/build.js --install"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",

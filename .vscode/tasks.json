@@ -14,7 +14,7 @@
     {
       "label": "vsce: package",
       "type": "shell",
-      "command": "del *.vsix; vsce package",
+      "command": "npm run package",
       "problemMatcher": [],
       "group": {
         "kind": "build",
@@ -42,7 +42,7 @@
     {
       "label": "build and install",
       "type": "shell",
-      "command": "npm run build-and-install",
+      "command": "npm run install",
       "problemMatcher": [],
       "group": {
         "kind": "build",
