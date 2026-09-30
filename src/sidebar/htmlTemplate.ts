@@ -834,9 +834,7 @@ let currentChartType = 'bar';
           }
         }
       });
-    } catch(e) {
-      console.error('initTodayChart error:', e);
-    }
+    } catch {}
   }
 
   function initWeekChart(data, is30Day, metric) {

@@ -54,8 +54,8 @@ localResourceRoots: [
                     if (this._requestRefresh) {
                         try {
                             await this._requestRefresh();
-                        } catch (error) {
-                            console.warn('[GPU] Day rollover refresh failed:', error);
+                        } catch {
+                            // 刷新失败不阻塞跨天通知，仍告知侧栏本次刷新已完成
                         }
                     }
                     this._view?.webview.postMessage({ command: 'refreshComplete' });
@@ -81,7 +81,6 @@ localResourceRoots: [
             this._view.webview.postMessage({ command: 'dayUsage', date, raw });
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            console.warn('[GPU] Day usage request failed:', message);
             this._view.webview.postMessage({ command: 'dayUsage', date, raw: null, error: message });
         }
     }

@@ -415,7 +415,6 @@ export class UsageQueryService {
             } catch (error) {
                 lastError = error;
                 if (attempt < maxAttempts && this.isRetryableError(error)) {
-                    console.log(`[GPU] Retry ${attempt}/${this.MAX_RETRY_COUNT} for ${url}`);
                     await new Promise(resolve => setTimeout(resolve, this.RETRY_DELAY_MS * attempt));
                     continue;
                 }
@@ -447,17 +446,12 @@ export class UsageQueryService {
                 }
             };
 
-            console.log(`[GPU] Request: GET ${parsedUrl.hostname}${fullPath}`);
-
             let settled = false;
-            const reqStartTime = Date.now();
 
             const timeoutId = setTimeout(() => {
                 if (settled) { return; }
                 settled = true;
                 req.destroy();
-                const elapsed = Date.now() - reqStartTime;
-                console.error(`[GPU] Request timeout for ${parsedUrl.hostname}${fullPath} (elapsed ${elapsed}ms / 60000ms)`);
                 reject(new Error(vscode.l10n.t('Request timeout after 60 seconds')));
             }, 60000);
 
@@ -474,10 +468,8 @@ export class UsageQueryService {
                     clearTimeout(timeoutId);
 
                     const statusCode = res.statusCode ?? 0;
-                    console.log(`[GPU] Response: ${statusCode} from ${parsedUrl.hostname}${parsedUrl.pathname}`);
 
                     if (statusCode !== 200) {
-                        console.error(`[GPU] HTTP Error ${statusCode}: ${data.substring(0, 500)}`);
                         let errorMsg: string;
                         if (statusCode === 401) {
                             errorMsg = vscode.l10n.t('Authentication failed (HTTP 401). Please check your API Key.');
@@ -495,16 +487,13 @@ export class UsageQueryService {
                     }
 
                     try {
-                        console.log(`[GPU] Raw response (first 1000 chars): ${data.substring(0, 1000)}`);
                         const json = JSON.parse(data);
                         let outputData = json.data || json;
                         if (postProcessor) {
                             outputData = postProcessor(outputData);
                         }
                         resolve(outputData);
-                    } catch (e) {
-                        console.error(`[GPU] JSON parse failed:`, e);
-                        console.error(`[GPU] Raw response that failed to parse (first 2000 chars): ${data.substring(0, 2000)}`);
+                    } catch {
                         reject(new Error(vscode.l10n.t('Failed to parse response from server.')));
                     }
                 });
@@ -514,7 +503,6 @@ export class UsageQueryService {
                 if (settled) { return; }
                 settled = true;
                 clearTimeout(timeoutId);
-                console.error(`[GPU] Request error (elapsed ${Date.now() - reqStartTime}ms):`, error);
                 reject(error);
             });
 
@@ -629,10 +617,7 @@ export class UsageQueryService {
             this.httpsGetWithRetry<any>(modelUsageUrl, authToken, queryParams30),
             // Token 活动为可选数据面：失败只隐藏区块，不影响配额/用量主链路
             this.httpsGetWithRetry<any>(tokenActivityUrl, authToken, activityQueryParams)
-                .catch((error: unknown) => {
-                    console.warn('[GPU] Token activity fetch failed (best-effort):', error);
-                    return null;
-                })
+                .catch(() => null)
         ]);
 
         const modelUsage = this.ensureArray<ModelUsageData>(modelUsageRaw?.modelUsage || modelUsageRaw);
