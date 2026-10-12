@@ -9,6 +9,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     private _view?: vscode.WebviewView;
     private _pendingData?: UsageResponse;
     private _pendingError?: string;
+    private _pendingRefreshing = false;
     private _disposables: vscode.Disposable[] = [];
 
     constructor(
@@ -94,11 +95,25 @@ localResourceRoots: [
         } else if (this._pendingData) {
             this.postUpdate(this._pendingData);
         }
+        // 刷新指示必须在终态消息之后补发：webview 重新可见时先恢复旧数据或错误页，
+        // 再进入刷新指示态，否则会被终态消息立即清除
+        if (this._pendingRefreshing) {
+            this._view.webview.postMessage({ command: 'refreshing' });
+        }
+    }
+
+    /** 标记一次网络刷新正在进行，侧栏据此展示刷新指示 */
+    setRefreshing(): void {
+        this._pendingRefreshing = true;
+        if (this._view && this._view.visible) {
+            this._view.webview.postMessage({ command: 'refreshing' });
+        }
     }
 
     update(response: UsageResponse): void {
         this._pendingData = response;
         this._pendingError = undefined;
+        this._pendingRefreshing = false;
         if (this._view && this._view.visible) {
             this.postUpdate(response);
         }
@@ -107,6 +122,7 @@ localResourceRoots: [
     setError(error: string): void {
         this._pendingError = error;
         this._pendingData = undefined;
+        this._pendingRefreshing = false;
         if (this._view && this._view.visible) {
             this._view.webview.postMessage({ command: 'showError', error });
         }

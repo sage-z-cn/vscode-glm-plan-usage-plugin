@@ -512,7 +512,7 @@ export function transformResponse(response: UsageResponse): SidebarData {
 
     return {
         level,
-        updated: now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+        updated: now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         locales: {
             todayUsage: vscode.l10n.t('Today Usage'),
             dailyUsage: vscode.l10n.t('Recent Usage'),

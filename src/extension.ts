@@ -54,6 +54,9 @@ async function queryUsage(forceRefresh = false): Promise<void> {
             }
         }
 
+        // 即将发起网络请求，让侧栏进入刷新指示态；缓存命中路径不提示，避免无意义闪烁
+        sidebarProvider.setRefreshing();
+
         const response = await UsageQueryService.queryUsage();
         UsageQueryService.rememberUsage(response);
         cache.set(response);

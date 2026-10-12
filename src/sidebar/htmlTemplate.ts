@@ -214,6 +214,22 @@ body {
   font-size: 12px;
   color: var(--vscode-descriptionForeground);
 }
+#header-updated {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#header-refresh-icon {
+  display: none;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: currentColor;
+}
+#header-refresh-icon.show {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
 .activity-summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -361,7 +377,7 @@ body {
   <div class="loading-spinner"></div>
   <div class="loading-text" id="loading-text">Loading...</div>
 </div>
-<div class="updated" id="header-updated" style="margin-bottom:10px;font-size:10px;color:var(--vscode-descriptionForeground)"></div>
+<div class="updated" id="header-updated" style="margin-bottom:10px;font-size:10px;color:var(--vscode-descriptionForeground)"><span id="updated-text"></span><svg id="header-refresh-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true"><path d="M2.85352 6.64746L4.85352 8.64746L4.14746 9.35352L3.00488 8.21191C3.11588 10.8709 5.314 13 8 13C9.6739 13 11.2291 12.1683 12.1602 10.7734L12.9922 11.3281C11.8742 13.0011 10.008 14 7.99902 14C4.75907 14 2.11101 11.4181 2.00293 8.20312L0.852539 9.35254L0.145508 8.64551L2.14746 6.64746H2.85352Z"/><path d="M8 1.99902C11.24 1.99905 13.888 4.58095 13.9961 7.7959L15.1455 6.64551L15.8525 7.35156L13.8525 9.35156H13.1455L11.1455 7.35156L11.8525 6.64453L12.9951 7.78711C12.8841 5.12812 10.686 2.99905 8 2.99902C6.3251 2.99902 4.76989 3.83173 3.83887 5.22559L3.00684 4.66992C4.12484 2.99792 5.991 1.99902 8 1.99902Z"/></svg></div>
 
 <div id="error-section" style="display:none">
   <div class="error-container">
@@ -505,6 +521,8 @@ let currentChartType = 'bar';
   var dayUsageByDate = {};
   var dayUsageMeta = null;
   var dayRolloverInFlight = false;
+  // 侧栏当前是否已渲染有效数据，决定刷新时用页头旋转图标还是全屏遮罩
+  var hasData = false;
 
   // 数值格式化（token 与 calls 轴共用）：si = K/M/B（千/百万/十亿），
   // chinese 分档为 万/亿；小数位与宿主 formatTokens 保持一致
@@ -531,6 +549,13 @@ let currentChartType = 'bar';
   function hideLoading() {
     var overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.classList.remove('show');
+  }
+
+  // 清除全部刷新指示：隐藏全屏遮罩并移除页头旋转图标
+  function clearRefreshing() {
+    hideLoading();
+    var icon = document.getElementById('header-refresh-icon');
+    if (icon) icon.classList.remove('show');
   }
 
   function isDark() {
@@ -1334,7 +1359,7 @@ let currentChartType = 'bar';
     document.getElementById('no-data').style.display = 'none';
 
     var levelPrefix = data.level ? data.level + ' · ' : '';
-    document.getElementById('header-updated').textContent = levelPrefix + (loc.updated || 'Updated') + ': ' + (data.updated || '');
+    document.getElementById('updated-text').textContent = levelPrefix + (loc.updated || 'Updated') + ': ' + (data.updated || '');
 
     // Set metric toggle labels from locale
     var todayTokensBtn = document.getElementById('today-metric-tokens');
@@ -1759,7 +1784,8 @@ let currentChartType = 'bar';
   window.addEventListener('message', function(event) {
     var msg = event.data;
     if (msg && msg.command === 'updateData') {
-      hideLoading();
+      hasData = true;
+      clearRefreshing();
       document.getElementById('error-section').style.display = 'none';
       document.getElementById('quota-section').style.display = '';
       document.getElementById('today-section').style.display = '';
@@ -1775,7 +1801,6 @@ let currentChartType = 'bar';
       }
       updateUI(msg.data);
     } else if (msg && msg.command === 'dayUsage') {
-      hideLoading();
       dayRolloverInFlight = false;
       if (msg.date && msg.raw) {
         var slice = formatRawDaySlice(msg.date, msg.raw);
@@ -1791,7 +1816,8 @@ let currentChartType = 'bar';
     } else if (msg && msg.command === 'refreshComplete') {
       dayRolloverInFlight = false;
     } else if (msg && msg.command === 'showError') {
-      hideLoading();
+      hasData = false;
+      clearRefreshing();
       dayRolloverInFlight = false;
       document.getElementById('error-section').style.display = '';
       document.getElementById('quota-section').style.display = 'none';
@@ -1800,8 +1826,16 @@ let currentChartType = 'bar';
       document.getElementById('activity-section').style.display = 'none';
       document.getElementById('no-data').style.display = 'none';
       document.getElementById('error-message').textContent = msg.error;
-    } else if (msg && msg.command === 'loading') {
-      showLoading(loc.loading || 'Loading...');
+    } else if (msg && msg.command === 'refreshing') {
+      if (hasData) {
+        // 已有数据：仅在页头显示旋转图标，原更新时间文案保持可见
+        var refreshIcon = document.getElementById('header-refresh-icon');
+        if (refreshIcon) refreshIcon.classList.add('show');
+      } else {
+        // 无数据或错误页：全屏遮罩，并隐藏错误区避免透过遮罩露出旧文案
+        document.getElementById('error-section').style.display = 'none';
+        showLoading(loc.loading || 'Loading...');
+      }
     }
   });
 
