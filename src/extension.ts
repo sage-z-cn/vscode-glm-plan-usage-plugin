@@ -210,6 +210,15 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     context.subscriptions.push(
+        vscode.window.onDidChangeWindowState((e) => {
+            // 窗口重新聚焦时补弹挂起的重置通知，多窗口场景由全局去重标记保证只弹一条
+            if (e.focused) {
+                autoRefreshManager.flushPendingResetNotifications();
+            }
+        })
+    );
+
+    context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration((e) => {
             if (e.affectsConfiguration('glmPlanUsage')) {
                 handleConfigChange();

@@ -336,6 +336,15 @@ export class UsageQueryService {
         return { summary, series };
     }
 
+    /** 远端可能返回秒级时间戳，统一归一为毫秒；无效值返回 undefined 以匹配可选字段语义 */
+    private static normalizeResetTime(value: unknown): number | undefined {
+        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+            return undefined;
+        }
+        // 小于 1e12 视为秒级，毫秒级时间戳在当前 era 均大于该阈值
+        return value < 1e12 ? value * 1000 : value;
+    }
+
     private static processQuotaLimit(data: any): QuotaLimitData[] {
         if (!data || !data.limits) {
             return [];
@@ -344,7 +353,7 @@ export class UsageQueryService {
         let tokensLimitCount = 0;
 
         return data.limits.map((item: any) => {
-            const base = { nextResetTime: item.nextResetTime };
+            const base = { nextResetTime: this.normalizeResetTime(item.nextResetTime) };
             if (item.type === 'TOKENS_LIMIT') {
                 const isFirst = tokensLimitCount === 0;
                 tokensLimitCount++;

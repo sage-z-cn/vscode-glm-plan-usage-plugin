@@ -10,14 +10,16 @@ import { QUOTA_TYPE_5H, QUOTA_TYPE_WEEKLY } from './constants';
 
 const RESET_DELAY_MS = 10_000;
 const RESET_COOLDOWN_MS = 300_000;
+const MAX_PENDING_RESET_NOTIFICATIONS = 20;
 const NOTIFIED_RESET_TIMES_KEY = 'glmPlanUsage.notifiedResetTimes';
 
 type ResetTimerEntry = { timer: NodeJS.Timeout; types: string[] };
+type PendingResetNotification = { types: string[]; resetTime: number };
 
 export class AutoRefreshManager implements vscode.Disposable {
     private autoRefreshTimer: NodeJS.Timeout | undefined;
     private resetTimers: ResetTimerEntry[] = [];
-    private pendingNotificationTimer: NodeJS.Timeout | undefined;
+    private pendingResetNotifications: PendingResetNotification[] = [];
     private lastResetFireTime = 0;
     private activityMonitor: ActivityMonitor | undefined;
     private previousState: UserActivityState = UserActivityState.ACTIVE;
@@ -53,11 +55,12 @@ export class AutoRefreshManager implements vscode.Disposable {
     }
 
     scheduleResetRefresh(response: UsageResponse): void {
-        this.clearResetTimers();
-
+        // 冷却期内直接返回，不清定时器，避免相邻重置事件的未触发定时器被误删后无人重建
         if (Date.now() - this.lastResetFireTime < RESET_COOLDOWN_MS) {
             return;
         }
+
+        this.clearResetTimers();
 
         const now = Date.now();
         const resetTypes = new Map<number, string[]>();
@@ -94,20 +97,36 @@ export class AutoRefreshManager implements vscode.Disposable {
         }
 
         if (vscode.window.state.focused) {
-            // 当前窗口聚焦：立即通知并标记
-            this.markResetTimeNotified(resetTime);
+            // 当前窗口聚焦：立即通知并标记；全局状态写入失败不影响本次展示
+            this.markResetTimeNotified(resetTime).catch(() => { });
             this.displayResetNotification(types);
-        } else {
-            // 非聚焦窗口：延迟后重试，给聚焦窗口优先权
-            this.pendingNotificationTimer = setTimeout(() => {
-                this.pendingNotificationTimer = undefined;
-                if (this.isResetTimeAlreadyNotified(resetTime)) {
-                    return;
-                }
-                // 延迟后仍未被标记，说明无聚焦窗口处理，此窗口负责通知
-                this.markResetTimeNotified(resetTime);
-                this.displayResetNotification(types);
-            }, 1500);
+            return;
+        }
+
+        // 非聚焦窗口仅挂起记录，待重新聚焦时补弹，配合全局去重标记保证多窗口只弹一条
+        if (this.pendingResetNotifications.length >= MAX_PENDING_RESET_NOTIFICATIONS) {
+            // 长期不聚焦时丢弃最旧记录，防止队列无限增长
+            this.pendingResetNotifications.shift();
+        }
+        this.pendingResetNotifications.push({ types, resetTime });
+    }
+
+    flushPendingResetNotifications(): void {
+        if (this.pendingResetNotifications.length === 0) {
+            return;
+        }
+
+        // 先整体取出再清空，处理过程中新入队的记录留给下次聚焦处理
+        const pending = this.pendingResetNotifications;
+        this.pendingResetNotifications = [];
+
+        for (const { types, resetTime } of pending) {
+            // 挂起期间可能已被其他窗口标记通知，跳过避免重复弹窗
+            if (this.isResetTimeAlreadyNotified(resetTime)) {
+                continue;
+            }
+            this.markResetTimeNotified(resetTime).catch(() => { });
+            this.displayResetNotification(types);
         }
     }
 
@@ -195,10 +214,6 @@ export class AutoRefreshManager implements vscode.Disposable {
             clearInterval(this.autoRefreshTimer);
         }
         this.clearResetTimers();
-        if (this.pendingNotificationTimer) {
-            clearTimeout(this.pendingNotificationTimer);
-            this.pendingNotificationTimer = undefined;
-        }
         if (this.activityMonitor) {
             this.activityMonitor.dispose();
             this.activityMonitor = undefined;
