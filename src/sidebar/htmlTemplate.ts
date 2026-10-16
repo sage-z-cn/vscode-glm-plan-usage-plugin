@@ -541,12 +541,17 @@ let currentChartType = 'bar';
   }
 
   // y 轴标签专用：在 formatTokens 基础上去掉小数尾零，如 1000.0万 显示为 1000万，10.00M 显示为 10M
+  // 用纯字符串操作实现，避免正则的反斜杠在模板字符串中被二次转义
   function formatAxisTokens(v, unit) {
     var s = formatTokens(v, unit);
-    if (typeof s === 'string') {
-      s = s.replace(/(\\.\d*?)0+([万亿KMB])$/, '$1$2').replace(/\.([万亿KMB])$/, '$1');
-    }
-    return s;
+    if (typeof s !== 'string') { return s; }
+    var unitChar = s.charAt(s.length - 1);
+    if ('万亿KMB'.indexOf(unitChar) < 0) { return s; }
+    var num = s.slice(0, -1);
+    if (num.indexOf('.') < 0) { return s; }
+    while (num.charAt(num.length - 1) === '0') { num = num.slice(0, -1); }
+    if (num.charAt(num.length - 1) === '.') { num = num.slice(0, -1); }
+    return num + unitChar;
   }
 
   function showLoading(text) {
