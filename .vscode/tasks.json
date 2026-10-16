@@ -40,7 +40,7 @@
       }
     },
     {
-      "label": "build and install",
+      "label": "install-ext",
       "type": "shell",
       "command": "npm run install-ext",
       "problemMatcher": [],
