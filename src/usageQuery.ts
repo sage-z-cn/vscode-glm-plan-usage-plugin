@@ -374,13 +374,19 @@ export class UsageQueryService {
     }
 
     private static readonly MAX_RETRY_COUNT = 3;
-    private static readonly RETRY_DELAY_MS = 1000;
+    private static readonly RETRY_DELAY_MS = 3000;
 
     /** 判断错误是否可重试（网络错误、超时、5xx） */
     private static isRetryableError(error: unknown): boolean {
         if (error instanceof Error) {
+            // 网络错误和超时。errno 代码可能只存在于 code 属性而不出现在 message 文本中，
+            // 例如 TLS 握手阶段断连错误 Client network socket disconnected before secure TLS connection was established
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code === 'ECONNRESET' || code === 'ETIMEDOUT' || code === 'EPIPE' ||
+                code === 'EAI_AGAIN' || code === 'ENOTFOUND' || code === 'ECONNREFUSED') {
+                return true;
+            }
             const msg = error.message;
-            // 网络错误和超时
             if (msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') ||
                 msg.includes('ENOTFOUND') || msg.includes('ECONNREFUSED') ||
                 msg.includes('socket hang up') || msg.includes('timeout')) {
@@ -452,7 +458,10 @@ export class UsageQueryService {
                 if (settled) { return; }
                 settled = true;
                 req.destroy();
-                reject(new Error(vscode.l10n.t('Request timeout after 60 seconds')));
+                // 打上 errno 标记，保证重试判断不受界面语言影响
+                const timeoutError = new Error(vscode.l10n.t('Request timeout after 60 seconds'));
+                (timeoutError as NodeJS.ErrnoException).code = 'ETIMEDOUT';
+                reject(timeoutError);
             }, 60000);
 
             const req = https.request(options, (res) => {

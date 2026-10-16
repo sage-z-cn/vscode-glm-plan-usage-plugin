@@ -21,6 +21,7 @@ body {
   background: var(--vscode-editor-background);
   user-select: none;
   position: relative;
+  overflow-x: hidden;
 }
 .section {
   margin-bottom: 16px;
@@ -111,6 +112,7 @@ body {
 .chart-container {
   width: 100%;
   height: 160px;
+  overflow: hidden;
 }
 .stat-suffix {
   font-size: 12px;
@@ -186,12 +188,9 @@ body {
 }
 .loading-overlay {
   display: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(var(--vscode-editor-background-rgb, 30,30,30), 0.6);
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--vscode-editor-background) 75%, transparent);
   z-index: 10;
   justify-content: center;
   align-items: center;
@@ -202,7 +201,7 @@ body {
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--vscode-panel-border);
+  border: 3px solid rgba(128, 128, 128, 0.4);
   border-top-color: var(--vscode-textLink-foreground);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -290,7 +289,7 @@ body {
 .activity-heatmap-wrap {
   width: 100%;
   display: block;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
   padding: 10px 8px 8px;
   border: 1px solid var(--vscode-panel-border);
@@ -507,6 +506,8 @@ body {
   const vscodeApi = acquireVsCodeApi();
   let todayChart = null;
   let weekChart = null;
+  let todayChartAnimated = false;
+  let weekChartAnimated = false;
   let loc = {};
   let storedData = null;
   let currentRange = '7';
@@ -537,6 +538,15 @@ let currentChartType = 'bar';
     if (v >= 1000000) { return (v / 1000000).toFixed(2) + 'M'; }
     if (v >= 1000) { return (v / 1000).toFixed(1) + 'K'; }
     return v;
+  }
+
+  // y 轴标签专用：在 formatTokens 基础上去掉小数尾零，如 1000.0万 显示为 1000万，10.00M 显示为 10M
+  function formatAxisTokens(v, unit) {
+    var s = formatTokens(v, unit);
+    if (typeof s === 'string') {
+      s = s.replace(/(\\.\d*?)0+([万亿KMB])$/, '$1$2').replace(/\.([万亿KMB])$/, '$1');
+    }
+    return s;
   }
 
   function showLoading(text) {
@@ -781,7 +791,11 @@ let currentChartType = 'bar';
         series.push(singleSeries);
       }
 
+      // 首次渲染播放动画，后续刷新（dispose 后重建）不再重放
+      var animateToday = !todayChartAnimated;
+      todayChartAnimated = true;
       todayChart.setOption({
+        animation: animateToday,
         grid: { top: hasValidModelData ? 24 : 12, right: 8, bottom: 32, left: 42 },
         legend: legend,
         xAxis: {
@@ -794,7 +808,7 @@ let currentChartType = 'bar';
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatTokens(v, tokenUnit); } },
+        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatAxisTokens(v, tokenUnit); } },
         splitLine: { lineStyle: { color: c.grid } }
       },
       series: series,
@@ -945,7 +959,11 @@ let currentChartType = 'bar';
     var xLabels = is30Day ? data.dates.map(function(d) { var idx = d.indexOf('\\n'); return idx >= 0 ? d.substring(0, idx) : d; }) : data.dates;
     var tooltipLabels = data.dates;
 
+    // 首次渲染播放动画，后续刷新（dispose 后重建）不再重放
+    var animateWeek = !weekChartAnimated;
+    weekChartAnimated = true;
     weekChart.setOption({
+      animation: animateWeek,
       grid: { top: data.models && data.models.length > 1 ? 24 : 8, right: 8, bottom: 32, left: 42 },
       legend: legend,
       xAxis: {
@@ -958,7 +976,7 @@ let currentChartType = 'bar';
       },
       yAxis: {
         type: 'value',
-        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatTokens(v, tokenUnit); } },
+        axisLabel: { fontSize: 9, color: c.text, formatter: function(v) { return formatAxisTokens(v, tokenUnit); } },
         splitLine: { lineStyle: { color: c.grid } }
       },
       series: series,
